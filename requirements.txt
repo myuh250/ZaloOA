@@ -5,3 +5,4 @@ gspread>=6.2.1
 google-auth>=2.40.3
 fastapi>=0.109.0
 uvicorn>=0.23.1
+python-dotenv>=1.0.0
