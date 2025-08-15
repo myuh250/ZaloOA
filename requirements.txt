@@ -3,3 +3,5 @@ google-api-python-client==2.177.0
 google-auth-oauthlib==1.2.2
 gspread>=6.2.1
 google-auth>=2.40.3
+fastapi>=0.109.0
+uvicorn>=0.23.1
