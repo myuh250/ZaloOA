@@ -2,7 +2,6 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 import os
-import json
 from typing import Optional, Dict, List
 from dotenv import load_dotenv
 
@@ -26,12 +25,10 @@ class GoogleSheetsService:
     def _init_connection(self):
         """Initialize Google Sheets connection"""
         try:
-            json_str = os.getenv('GOOGLE_SERVICE_ACCOUNT_JSON')
-            if not json_str:
-                raise ValueError("❌ GOOGLE_SERVICE_ACCOUNT_JSON not set in environment")
-            
-            info = json.loads(json_str)
-            creds = Credentials.from_service_account_info(info, scopes=self.scopes)
+            creds = Credentials.from_service_account_file(
+                self.credentials_file, 
+                scopes=self.scopes
+            )
             self.gc = gspread.authorize(creds)
             print("✅ Google Sheets connection established")
         except Exception as e:
