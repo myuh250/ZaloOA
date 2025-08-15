@@ -39,8 +39,8 @@ def main():
     fastapi_thread.start()
 
     # Start cron job in a separate thread
-    cron_thread = threading.Thread(target=start_cron_thread, daemon=True)
-    cron_thread.start()
+    # cron_thread = threading.Thread(target=start_cron_thread, daemon=True)
+    # cron_thread.start()
 
     # Start Telegram bot (blocking)
     telegram_app = ApplicationBuilder().token(BOT_TOKEN).build()
