@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from api.webhook import router
 from telegram.ext import ApplicationBuilder
 from config import BOT_TOKEN
@@ -32,6 +33,8 @@ def start_fastapi():
 
 app = FastAPI()
 app.include_router(router)
+# Serve static files (for Zalo OA verification, etc.)
+app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 def main():
     # Start FastAPI server in a separate thread
