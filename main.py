@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from api.webhook import router
 from telegram.ext import ApplicationBuilder
 from config import BOT_TOKEN
@@ -9,6 +10,7 @@ import asyncio
 import threading
 import time
 import uvicorn
+import os
 
 async def cron_worker():
     """Run cron jobs periodically"""
@@ -32,9 +34,21 @@ def start_fastapi():
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
 
 app = FastAPI()
+
+# Zalo verification routes (support both with and without .html extension)
+@app.get("/zalo_verifierUERWBlpADnKQr-8ntgHQC2EaYHVFqbvBDp4q.html")
+async def zalo_verification():
+    """Serve Zalo verification file"""
+    verification_file = "zalo_verifierUERWBlpADnKQr-8ntgHQC2EaYHVFqbvBDp4q.html"
+    if os.path.exists(verification_file):
+        return FileResponse(verification_file, media_type="text/html")
+    return {"error": "Verification file not found"}
+
+# Include API routes
 app.include_router(router)
+
 # Serve static files (for Zalo OA verification, etc.)
-app.mount("/", StaticFiles(directory=".", html=True), name="static")
+app.mount("/static", StaticFiles(directory=".", html=True), name="static")
 
 def main():
     # Start FastAPI server in a separate thread
