@@ -1,0 +1,25 @@
+{
+  "template_id": "CARE_REMINDER_001",
+  "template_name": "Nhắc hoàn thiện form khảo sát",
+  "type": "customer_care",
+  "purpose": 5,
+  "logo": {
+    "url": "https://yourdomain.com/logo.png",
+    "width": 400,
+    "height": 72
+  },
+  "body": [
+    {
+      "type": "text",
+      "text": "Chào <user_name>, chúng tôi nhận thấy bạn chưa hoàn thành form khảo sát. Bạn vui lòng nhấn nút bên dưới để tiếp tục nhé."
+    }
+  ],
+  "ctas": [
+    {
+      "type": "url",
+      "name": "Hoàn thiện form",
+      "url": "<survey_link>"
+    }
+  ],
+  "language": "vi"
+}

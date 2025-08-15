@@ -1,0 +1,19 @@
+{
+  "template_id": "TXN_WELCOME_001",
+  "template_name": "Chào mừng người dùng mới",
+  "type": "transaction",
+  "purpose": 1,
+  "logo": {
+    "url": "https://yourdomain.com/logo.png",
+    "width": 400,
+    "height": 72
+  },
+  "body": [
+    {
+      "type": "text",
+      "text": "Xin chào <user_name>, cảm ơn bạn đã nhắn tin lần đầu. Chúng tôi đã ghi nhận và sẽ hỗ trợ bạn sớm nhất."
+    }
+  ],
+  "ctas": [],
+  "language": "vi"
+}

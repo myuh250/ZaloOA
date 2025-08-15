@@ -1,0 +1,25 @@
+{
+  "template_id": "CARE_SURVEY_001",
+  "template_name": "Khảo sát thông tin tổ chức",
+  "type": "customer_care",
+  "purpose": 5,
+  "logo": {
+    "url": "https://yourdomain.com/logo.png",
+    "width": 400,
+    "height": 72
+  },
+  "body": [
+    {
+      "type": "text",
+      "text": "Xin chào <user_name>, cảm ơn bạn đã tương tác. Vui lòng hoàn thành form khảo sát thông tin công ty tại link bên dưới:"
+    }
+  ],
+  "ctas": [
+    {
+      "type": "url",
+      "name": "Điền form khảo sát",
+      "url": "<survey_link>"
+    }
+  ],
+  "language": "vi"
+}
