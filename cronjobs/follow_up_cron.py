@@ -4,8 +4,6 @@ from services.bot_service import BotService
 from services.bot_service import UserAction
 from utils.date_convert import *
 from datetime import datetime
-import pytz
-import asyncio
 from telegram import Bot
 import os
 from dotenv import load_dotenv
