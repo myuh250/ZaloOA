@@ -7,31 +7,54 @@ from config import BOT_TOKEN
 from bot.handlers import register_handlers
 from cronjobs.follow_up_cron import run_follow_up_cron
 import asyncio
-import threading
-import time
 import uvicorn
 import os
+import logging
+import sys
+
+# --- Logging setup ---
+import watchtower
+import boto3
+
+# Configure root logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+
+# Push logs to CloudWatch
+session = boto3.Session(
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    region_name=os.getenv("AWS_REGION", "ap-southeast-1"),  
+)
+
+log_group = os.getenv("CLOUDWATCH_LOG_GROUP", "MyFastAPIAppLogs")
+
+cloudwatch_handler = watchtower.CloudWatchLogHandler(
+    log_group=log_group,
+    stream_name=os.getenv("RENDER_SERVICE_ID", "fastapi-service"),
+    create_log_group=True,
+)
+
+logging.getLogger().addHandler(cloudwatch_handler)
+logger = logging.getLogger(__name__)
+
+# --- App setup ---
+app = FastAPI()
 
 async def cron_worker():
     """Run cron jobs periodically"""
     while True:
         try:
             await run_follow_up_cron()
-            print("Cron job completed\n")
+            logger.info("Cron job completed")
         except Exception as e:
-            print(f"Error in cron job: {e}")
-
+            logger.error(f"Error in cron job: {e}")
         await asyncio.sleep(60)
 
-def start_cron_thread():
-    """Start cron in separate thread"""
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(cron_worker())
-    
-app = FastAPI()
-
-# Zalo verification routes (support both with and without .html extension)
+# Zalo verification routes
 @app.get("/zalo_verifierUERWBlpADnKQr-8ntgHQC2EaYHVFqbvBDp4q.html")
 async def zalo_verification():
     """Serve Zalo verification file"""
@@ -43,18 +66,12 @@ async def zalo_verification():
 # Include API routes
 app.include_router(router)
 
-# Serve static files (for Zalo OA verification, etc.)
+# Serve static files
 app.mount("/static", StaticFiles(directory=".", html=True), name="static")
 
 async def main():
-    # start FastAPI in background
     config = uvicorn.Config("main:app", host="0.0.0.0", port=8000)
     server = uvicorn.Server(config)
-
-    # start cron in background
-    # asyncio.create_task(cron_worker())
-
-    # run uvicorn (blocking)
     await server.serve()
 
 if __name__ == "__main__":
