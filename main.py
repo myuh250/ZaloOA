@@ -29,10 +29,6 @@ def start_cron_thread():
     asyncio.set_event_loop(loop)
     loop.run_until_complete(cron_worker())
     
-def start_fastapi():
-    """Start FastAPI server in a separate thread"""
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
-
 app = FastAPI()
 
 # Zalo verification routes (support both with and without .html extension)
@@ -50,19 +46,16 @@ app.include_router(router)
 # Serve static files (for Zalo OA verification, etc.)
 app.mount("/static", StaticFiles(directory=".", html=True), name="static")
 
-def main():
-    # Start FastAPI server in a separate thread
-    fastapi_thread = threading.Thread(target=start_fastapi, daemon=True)
-    fastapi_thread.start()
+async def main():
+    # start FastAPI in background
+    config = uvicorn.Config("main:app", host="0.0.0.0", port=8000)
+    server = uvicorn.Server(config)
 
-    # Start cron job in a separate thread
-    # cron_thread = threading.Thread(target=start_cron_thread, daemon=True)
-    # cron_thread.start()
+    # start cron in background
+    # asyncio.create_task(cron_worker())
 
-    # Start Telegram bot (blocking)
-    # telegram_app = ApplicationBuilder().token(BOT_TOKEN).build()
-    # register_handlers(telegram_app)
-    # telegram_app.run_polling()
+    # run uvicorn (blocking)
+    await server.serve()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
