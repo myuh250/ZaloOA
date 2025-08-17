@@ -60,9 +60,9 @@ def main():
     # cron_thread.start()
 
     # Start Telegram bot (blocking)
-    telegram_app = ApplicationBuilder().token(BOT_TOKEN).build()
-    register_handlers(telegram_app)
-    telegram_app.run_polling()
+    # telegram_app = ApplicationBuilder().token(BOT_TOKEN).build()
+    # register_handlers(telegram_app)
+    # telegram_app.run_polling()
 
 if __name__ == "__main__":
     main()
