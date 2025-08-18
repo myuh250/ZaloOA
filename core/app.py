@@ -18,7 +18,7 @@ def create_app() -> FastAPI:
     )
     
     # Include routers
-    app.include_router(mainrouter, prefix="/api/v1")
+    app.include_router(mainrouter)
     
     # Serve static files
     app.mount("/static", StaticFiles(directory=".", html=True), name="static")
