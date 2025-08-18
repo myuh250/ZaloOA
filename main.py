@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from api.webhook import router
@@ -62,6 +62,15 @@ async def zalo_verification():
     if os.path.exists(verification_file):
         return FileResponse(verification_file, media_type="text/html")
     return {"error": "Verification file not found"}
+
+@app.get("/")
+async def zalo_oauth_callback(request: Request):
+    params = dict(request.query_params)
+    logger.info(f"Zalo OAuth callback received. Query params: {params}")
+    oa_id = params.get("oa_id")
+    code = params.get("code")
+
+    return {"status": "ok", "oa_id": oa_id, "code": code, "message": "OAuth callback received"}
 
 # Include API routes
 app.include_router(router)
