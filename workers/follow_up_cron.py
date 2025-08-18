@@ -8,7 +8,6 @@ from telegram import Bot
 import os
 from dotenv import load_dotenv
 import telegram
-from services.google_sheets_service import get_sheets_service
 
 load_dotenv()
 
