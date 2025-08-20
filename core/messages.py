@@ -8,7 +8,7 @@ load_dotenv()
 API_URL_V3 = "https://openapi.zalo.me/v3.0/" 
 
 def send_text_message(ZALO_OA_ACCESS_TOKEN, user_id, message_text=None, message_file=None):
-    url = API_URL_V3 + "message/cs"
+    url = API_URL_V3 + "oa/message/cs"
     headers = {
         "Content-Type": "application/json",
         "access_token": ZALO_OA_ACCESS_TOKEN
