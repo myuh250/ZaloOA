@@ -1,7 +1,9 @@
 import os
 from adapters import PlatformAdapter
 from services.bot_service import BotResponse, UserAction
-from core.messages import send_text_message
+# NOTE: Legacy adapter - không được sử dụng trong Clean Architecture hiện tại
+# ZaloMessagingGateway được sử dụng thay thế
+# from core.messages import send_text_message  # REMOVED: Di chuyển vào ZaloMessagingGateway
 
 class ZaloAdapter(PlatformAdapter):
     """ZaloOA-specific adapter"""
@@ -35,18 +37,6 @@ class ZaloAdapter(PlatformAdapter):
                 user_name=user_name,
                 action_type="unknown"
             )
-    
-    async def send_response(self, response: BotResponse, zalo_context):
-        """Send response using ZaloOA API"""
-        if not response or not response.text:
-            return
-            
-        user_id = zalo_context.get("user_id")
-        if user_id and self.access_token:
-            send_text_message(
-                ZALO_OA_ACCESS_TOKEN=self.access_token,
-                user_id=str(user_id),
-                message_text=response.text
-            )
+
 
         
