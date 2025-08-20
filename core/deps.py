@@ -20,6 +20,9 @@ from services.form_service import FormService
 from services.template_service import TemplateService
 from services.google_sheets_service import GoogleSheetsService
 from core.config import settings
+from core.usecases.message_usecase import MessageUseCase
+from adapters.zalo_messaging_gateway import ZaloMessagingGateway
+import os
 
 
 @lru_cache()
@@ -51,8 +54,25 @@ def get_bot_service(
     return BotService(form_service=form_service)
 
 
+@lru_cache()
+def get_zalo_gateway() -> ZaloMessagingGateway:
+    """Get ZaloMessagingGateway with access token"""
+    access_token = os.getenv("ZALO_OA_ACCESS_TOKEN")
+    return ZaloMessagingGateway(access_token=access_token)
+
+
+@lru_cache()
+def get_message_usecase(
+    bot_service: BotService = Depends(get_bot_service),
+    zalo_gateway: ZaloMessagingGateway = Depends(get_zalo_gateway)
+) -> MessageUseCase:
+    """Get MessageUseCase with injected dependencies"""
+    return MessageUseCase(bot_service=bot_service, message_gateway=zalo_gateway)
+
+
 # Type annotations for easier usage
 GoogleSheetsServiceDep = Annotated[GoogleSheetsService, Depends(get_google_sheets_service)]
 TemplateServiceDep = Annotated[TemplateService, Depends(get_template_service)]
 FormServiceDep = Annotated[FormService, Depends(get_form_service)]
 BotServiceDep = Annotated[BotService, Depends(get_bot_service)]
+MessageUseCaseDep = Annotated[MessageUseCase, Depends(get_message_usecase)]

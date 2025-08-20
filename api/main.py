@@ -1,14 +1,12 @@
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import FileResponse
-from core.messages import send_text_message
-from core.deps import FormServiceDep
-from services.form_service import FormService
+from core.usecases.message_usecase import MessageUseCase, ProcessMessageRequest
+from core.deps import MessageUseCaseDep
 import os
 import logging
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-ZALO_OA_ACCESS_TOKEN = os.getenv("ZALO_OA_ACCESS_TOKEN")
 
 @router.get("/zalo_verifierUERWBlpADnKQr-8ntgHQC2EaYHVFqbvBDp4q.html")
 async def zalo_verification():
@@ -31,18 +29,37 @@ async def zalo_oauth_callback(request: Request):
 @router.post("/webhook")
 async def zalo_webhook(
     request: Request,
-    form_service: FormServiceDep
+    message_usecase: MessageUseCaseDep
 ):
-    """Handle Zalo webhook with dependency injection"""
+    """
+    Zalo Webhook Controller - chỉ handle HTTP layer
+    Clean Architecture: Controller chỉ parse request và delegate to UseCase
+    """
+    # 1. Parse HTTP request
     logger.info(f"Headers: {dict(request.headers)}")
     data = await request.json()
     logger.info(f"Webhook payload: {data}")
-    body = await request.body()
-    logger.info(f"Raw body: {body.decode('utf-8')}")
     
-    user_id = data.get("user_id")
-    if user_id:
-        logger.info(f"Sending reply to user_id={user_id}")
-        send_text_message(ZALO_OA_ACCESS_TOKEN, user_id, message_text="Xin chào từ FastAPI!")
+    # 2. Extract data từ request (HTTP concern)
+    user_id = str(data.get("user_id", ""))
+    user_name = data.get("user_name", "Bạn") 
+    message_text = data.get("message", {}).get("text", "")
     
-    return {"status": "received"}
+    # 3. Create request DTO
+    process_request = ProcessMessageRequest(
+        user_id=user_id,
+        user_name=user_name,
+        message_text=message_text,
+        platform_data=data
+    )
+    
+    # 4. Delegate to UseCase (business logic)
+    result = await message_usecase.process_message(process_request)
+    
+    # 5. Return HTTP response
+    if result.success:
+        logger.info(f"Message processed successfully: {result.response_text}")
+        return {"status": "received", "message": result.message}
+    else:
+        logger.error(f"Processing failed: {result.message}")
+        return {"status": "error", "message": result.message}
