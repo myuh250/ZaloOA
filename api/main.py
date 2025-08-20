@@ -41,7 +41,7 @@ async def zalo_webhook(
     logger.info(f"Webhook payload: {data}")
     
     # 2. Extract data từ request (HTTP concern)
-    user_id = str(data.get("user_id", ""))
+    user_id = str(data.get("sender", {}).get("id", ""))
     user_name = data.get("user_name", "Bạn") 
     message_text = data.get("message", {}).get("text", "")
     
