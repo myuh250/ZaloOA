@@ -40,6 +40,12 @@ async def zalo_webhook(
     data = await request.json()
     logger.info(f"Webhook payload: {data}")
     
+    # 1.1. Filter chỉ xử lý event từ user gửi tin nhắn
+    event_name = data.get("event_name", "")
+    if event_name != "user_send_text":
+        logger.info(f"Ignored event: {event_name}")
+        return {"status": "ignored", "message": f"Event {event_name} ignored"}
+    
     # 2. Extract data từ request (HTTP concern)
     user_id = str(data.get("sender", {}).get("id", ""))
     user_name = data.get("user_name", "Bạn") 
