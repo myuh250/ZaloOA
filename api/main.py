@@ -1,5 +1,8 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Depends
+from fastapi.responses import FileResponse
 from core.messages import send_text_message
+from core.deps import FormServiceDep
+from services.form_service import FormService
 import os
 import logging
 
@@ -26,7 +29,11 @@ async def zalo_oauth_callback(request: Request):
     return {"status": "ok", "oa_id": oa_id, "code": code, "message": "OAuth callback received"}
 
 @router.post("/webhook")
-async def zalo_webhook(request: Request):
+async def zalo_webhook(
+    request: Request,
+    form_service: FormServiceDep
+):
+    """Handle Zalo webhook with dependency injection"""
     logger.info(f"Headers: {dict(request.headers)}")
     data = await request.json()
     logger.info(f"Webhook payload: {data}")

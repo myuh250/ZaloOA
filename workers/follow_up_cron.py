@@ -1,4 +1,4 @@
-from services.form_service import get_user_stage, mark_follow_up_sent
+from services.form_service import get_form_service
 from services.google_sheets_service import get_sheets_service
 from services.bot_service import BotService
 from services.bot_service import UserAction
@@ -13,7 +13,10 @@ load_dotenv()
 
 FOLLOW_UP_THRESHOLD = 15
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-bot_service = BotService()
+
+# Initialize services
+form_service = get_form_service()
+bot_service = BotService(form_service)
 
 # async def send_follow_up(user_id, user_name):
 #     user_action = UserAction(
@@ -83,7 +86,7 @@ async def run_follow_up_cron():
     for user in all_users:
         user_id = user.get('id')  
         user_name = user.get('username', 'User') 
-        stage = get_user_stage(user_id)
+        stage = form_service.get_user_stage(user_id)
         # print(f"Checking user {user_name} (ID: {user_id}), stage: {stage}")
         
         if stage != 'follow_up':

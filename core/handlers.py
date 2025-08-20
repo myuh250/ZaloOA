@@ -1,10 +1,12 @@
 from telegram import Update
 from telegram.ext import CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 from services.bot_service import BotService
+from services.form_service import get_form_service
 from adapters.telegram_adapter import TelegramAdapter
 
-# Initialize services
-bot_service = BotService()
+# Initialize services with dependency injection
+form_service = get_form_service()
+bot_service = BotService(form_service)
 telegram_adapter = TelegramAdapter()
 
 async def handle_update(update: Update, context: ContextTypes.DEFAULT_TYPE):

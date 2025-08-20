@@ -1,11 +1,9 @@
 from dataclasses import dataclass
 from typing import Optional, Tuple, Dict, Any
-from services.form_service import (
-    mark_user_as_seen, increment_message_count,
-    mark_form_completed, get_user_stage,
-    get_welcome_message, get_form_message, get_after_interaction_message
-)
-from bot.messages import THANK_YOU
+from services.form_service import FormService, get_form_service
+
+# Constants
+THANK_YOU = "Cảm ơn bạn đã hoàn thành form! 🙏"
 
 @dataclass
 class BotResponse:
@@ -26,9 +24,12 @@ class UserAction:
 class BotService:
     """Core bot logic - platform independent"""
     
+    def __init__(self, form_service: FormService = None):
+        self.form_service = form_service or get_form_service()
+    
     def handle_first_time(self, user_action: UserAction) -> BotResponse:
-        mark_user_as_seen(user_action.user_id, user_action.user_name)
-        text, kb = get_welcome_message(user_action.user_name)
+        self.form_service.mark_user_as_seen(user_action.user_id, user_action.user_name)
+        text, kb = self.form_service.get_welcome_message(user_action.user_name)
         return BotResponse(
             text=text,
             keyboard_markup=kb,
@@ -36,8 +37,8 @@ class BotService:
         )
 
     def handle_second_interaction(self, user_action: UserAction) -> BotResponse:
-        increment_message_count(user_action.user_id)
-        text, kb = get_form_message(user_action.user_name)
+        self.form_service.increment_message_count(user_action.user_id)
+        text, kb = self.form_service.get_form_message(user_action.user_name)
         return BotResponse(
             text=text,
             keyboard_markup=kb,
@@ -45,8 +46,8 @@ class BotService:
         )
 
     def handle_follow_up(self, user_action: UserAction) -> BotResponse:
-        increment_message_count(user_action.user_id)
-        text, kb = get_after_interaction_message(user_action.user_name)
+        self.form_service.increment_message_count(user_action.user_id)
+        text, kb = self.form_service.get_after_interaction_message(user_action.user_name)
         return BotResponse(
             text=text,
             keyboard_markup=kb,
@@ -61,7 +62,7 @@ class BotService:
 
     def handle_user_stage(self, user_action: UserAction) -> BotResponse:
         """Handle user interaction based on their stage"""
-        stage = get_user_stage(user_action.user_id)
+        stage = self.form_service.get_user_stage(user_action.user_id)
 
         if stage == 'first_time':
             return self.handle_first_time(user_action)
@@ -83,15 +84,15 @@ class BotService:
     def handle_callback(self, user_action: UserAction) -> BotResponse:
         """Handle button callbacks"""
         if user_action.data == "welcome_start":
-            increment_message_count(user_action.user_id)
-            text, kb = get_form_message(user_action.user_name)
+            self.form_service.increment_message_count(user_action.user_id)
+            text, kb = self.form_service.get_form_message(user_action.user_name)
             return BotResponse(
                 text=text,
                 keyboard_markup=kb,
                 action_type="edit"
             )
         elif user_action.data == "form_filled":
-            mark_form_completed(user_action.user_id)
+            self.form_service.mark_form_completed(user_action.user_id)
             return BotResponse(
                 text=THANK_YOU,
                 action_type="edit"
