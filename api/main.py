@@ -36,7 +36,7 @@ async def zalo_webhook(
     Clean Architecture: Controller chỉ parse request và delegate to UseCase
     """
     # 1. Parse HTTP request
-    logger.info(f"Headers: {dict(request.headers)}")
+    # logger.info(f"Headers: {dict(request.headers)}")
     data = await request.json()
     logger.info(f"Webhook payload: {data}")
     
@@ -64,8 +64,8 @@ async def zalo_webhook(
     
     # 5. Return HTTP response
     if result.success:
-        logger.info(f"Message processed successfully: {result.response_text}")
+        # logger.info(f"Message processed successfully: {result.response_text}")
         return {"status": "received", "message": result.message}
     else:
-        logger.error(f"Processing failed: {result.message}")
+        # logger.error(f"Processing failed: {result.message}")
         return {"status": "error", "message": result.message}
