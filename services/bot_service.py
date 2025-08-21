@@ -79,8 +79,8 @@ class BotService:
 
     def handle_text_message(self, user_action: UserAction) -> BotResponse:
         """Handle text messages"""
-        if user_action.data and "tôi đã điền form" in user_action.data.lower():
-            # Reuse existing callback logic instead of duplicating code
+        # Always handle form completion (this is response to bot)
+        if self._is_form_completion_message(user_action.data):
             callback_action = UserAction(
                 user_id=user_action.user_id,
                 user_name=user_action.user_name, 
@@ -88,7 +88,20 @@ class BotService:
                 data="form_filled"
             )
             return self.handle_callback(callback_action)
-        return self.handle_user_stage(user_action)
+        
+        # For first time users - always respond (no slash command needed)
+        if self.form_service.is_first_time_user(user_action.user_id):
+            return self.handle_user_stage(user_action)
+        
+        # For existing users - only respond if slash command present
+        if self._has_slash_command(user_action.data):
+            return self.handle_user_stage(user_action)
+        
+        # No response - let human conversation continue
+        return BotResponse(
+            text="",  # Empty response = no reply
+            action_type="ignore"
+        )
     
     def handle_callback(self, user_action: UserAction) -> BotResponse:
         """Handle button callbacks"""
@@ -108,3 +121,21 @@ class BotService:
             )
         
         return BotResponse(text="Unknown action", action_type="message")
+    
+    def has_slash_command(self, text: str) -> bool:
+        """Check if message contains slash command"""
+        if not text:
+            return False
+        
+        text = text.strip().lower()
+        
+        # List of supported slash commands
+        commands = ['/support']
+        
+        return any(text.startswith(cmd) for cmd in commands)
+
+    def is_form_completion_message(self, text: str) -> bool:
+        """Check if message indicates form completion"""
+        if not text:
+            return False
+        return "tôi đã điền form" in text.lower()
