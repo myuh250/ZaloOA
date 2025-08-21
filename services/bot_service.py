@@ -76,26 +76,16 @@ class BotService:
     def handle_start_command(self, user_action: UserAction) -> BotResponse:
         """Handle /start command or initial user interaction"""
         return self.handle_user_stage(user_action)
-
-    def handle_text_message(self, user_action: UserAction) -> BotResponse:
-        """Handle text messages"""
-        if self.is_form_completion_message(user_action.data):
-            callback_action = UserAction(
-                user_id=user_action.user_id,
-                user_name=user_action.user_name, 
-                action_type="callback",
-                data="form_filled"
-            )
-            return self.handle_callback(callback_action)
-        
-        
-        return self.handle_user_stage(user_action)
     
     def handle_text_message(self, user_action: UserAction) -> BotResponse:
         """Handle text messages with slash command requirement"""
         
+        # DEBUG: Log incoming message
+        print(f"🔍 DEBUG: Received text message: '{user_action.data}' from user {user_action.user_id}")
+        
         # Always handle form completion (this is response to bot)
         if self.is_form_completion_message(user_action.data):
+            print(f"✅ DEBUG: Form completion detected!")
             callback_action = UserAction(
                 user_id=user_action.user_id,
                 user_name=user_action.user_name, 
@@ -104,14 +94,19 @@ class BotService:
             )
             return self.handle_callback(callback_action)
         
+        print(f"❌ DEBUG: Form completion NOT detected")
+        
         # For first time users - always respond (no slash command needed)
         if self.form_service.is_first_time_user(user_action.user_id):
+            print(f"👋 DEBUG: First time user - responding")
             return self.handle_user_stage(user_action)
         
         # For existing users - only respond if slash command present
         if self.has_slash_command(user_action.data):
+            print(f"🤖 DEBUG: Slash command detected - responding")
             return self.handle_user_stage(user_action)
         
+        print(f"🤐 DEBUG: No slash command - ignoring")
         # No response - let human conversation continue
         return BotResponse(
             text="",  # Empty response = no reply
