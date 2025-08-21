@@ -47,8 +47,15 @@ class MessageUseCase:
                 data=request.message_text
             )
             
-            # Business logic - sử dụng existing bot service
-            response = self.bot_service.handle_start_command(user_action)
+            # Business logic - route to appropriate handler based on action type
+            if user_action.action_type == "text_message":
+                response = self.bot_service.handle_text_message(user_action)
+            elif user_action.action_type == "start":
+                response = self.bot_service.handle_start_command(user_action)
+            elif user_action.action_type == "callback":
+                response = self.bot_service.handle_callback(user_action)
+            else:
+                response = self.bot_service.handle_start_command(user_action)
             
             # Send through gateway (abstraction layer)
             await self.message_gateway.send_response(response, request.user_id)
