@@ -11,7 +11,7 @@
   "body": [
     {
       "type": "text",
-      "text": "Xin chào <user_name>, cảm ơn bạn đã nhắn tin! Mời bạn nhắn chữ **\"Bắt đầu\"** để chúng tôi có thể hỗ trợ bạn tốt nhất.\nĐối với những tin nhắn sau này, nếu bạn cần hỗ trợ từ bot vui lòng nhắn **/support** để chúng tôi có thể hỗ trợ bạn.\nVí dụ: \"/support Tôi cần hướng dẫn tạo demand\""
+      "text": "Xin chào <user_name>, cảm ơn bạn đã nhắn tin! Mời bạn nhắn chữ \"Bắt đầu\" để chúng tôi có thể hỗ trợ bạn tốt nhất.\nĐối với những tin nhắn sau này, nếu bạn cần hỗ trợ từ bot vui lòng nhắn /support để chúng tôi có thể hỗ trợ bạn.\nVí dụ: \"/support Tôi cần hướng dẫn tạo demand\""
     }
   ],
   "ctas": [],
