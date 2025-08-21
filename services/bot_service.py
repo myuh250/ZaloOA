@@ -82,6 +82,8 @@ class BotService:
         
         # Always handle form completion (this is response to bot)
         if self.is_form_completion_message(user_action.data):
+            # Mark form as completed in Google Sheets
+            self.form_service.mark_form_completed(user_action.user_id)
             callback_action = UserAction(
                 user_id=user_action.user_id,
                 user_name=user_action.user_name, 
