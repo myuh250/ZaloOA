@@ -79,6 +79,15 @@ class BotService:
 
     def handle_text_message(self, user_action: UserAction) -> BotResponse:
         """Handle text messages"""
+        if user_action.data and "tôi đã điền form" in user_action.data.lower():
+            # Reuse existing callback logic instead of duplicating code
+            callback_action = UserAction(
+                user_id=user_action.user_id,
+                user_name=user_action.user_name, 
+                action_type="callback",
+                data="form_filled"
+            )
+            return self.handle_callback(callback_action)
         return self.handle_user_stage(user_action)
     
     def handle_callback(self, user_action: UserAction) -> BotResponse:
