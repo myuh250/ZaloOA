@@ -61,7 +61,7 @@ class TemplateService:
                     if survey_link and "<survey_link>" in url:
                         url = url.replace("<survey_link>", survey_link)
                     # Append link to message with proper formatting
-                    link_text = f"\n\n👉 {['name']}: {url}"
+                    link_text = f"\n\n👉 {url}"
                     message_text += link_text
         
         # Add callback instructions for form templates instead of buttons
