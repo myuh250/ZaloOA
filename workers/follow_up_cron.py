@@ -11,30 +11,12 @@ import telegram
 
 load_dotenv()
 
-FOLLOW_UP_THRESHOLD = 15
+FOLLOW_UP_THRESHOLD = 900
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 # Initialize services
 form_service = get_form_service()
 bot_service = BotService(form_service)
-
-# async def send_follow_up(user_id, user_name):
-#     user_action = UserAction(
-#         user_id=user_id,
-#         user_name=user_name,
-#         action_type="follow_up"
-#     )
-#     response = bot_service.handle_follow_up(user_action)
-    
-#     # TODO: đổi api gửi thực tế theo từng platform
-#     # Telegram API
-#     bot = Bot(token=BOT_TOKEN)
-#     await bot.send_message(
-#         chat_id=user_id,
-#         text=response.text,
-#         reply_markup=response.keyboard_markup 
-#     )
-#     mark_follow_up_sent(user_id)
 
 async def run_sync_form_responses():
     updated_users = get_sheets_service().sync_form_responses("UserStatus")
