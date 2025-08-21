@@ -11,7 +11,7 @@
   "body": [
     {
       "type": "text",
-      "text": "Xin chào <user_name>, cảm ơn bạn đã nhắn tin lần đầu. Chúng tôi đã ghi nhận và sẽ hỗ trợ bạn sớm nhất."
+      "text": "Xin chào <user_name>, cảm ơn bạn đã nhắn tin. Mời bạn nhắn chữ \"Bắt đầu\" để chúng tôi có thể hỗ trợ bạn tốt nhất."
     }
   ],
   "ctas": [],

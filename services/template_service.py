@@ -30,8 +30,18 @@ class TemplateService:
 
     def format_template_message(self, template_data: Dict[str, Any], 
                                 user_name: str = "Bạn", 
-                                survey_link: str = None) -> str:
-        """Format template message with user data"""
+                                survey_link: str = None,
+                                embed_links: bool = True,
+                                add_callback_instructions: bool = True) -> str:
+        """Format template message with user data
+        
+        Args:
+            template_data: Template data from JSON
+            user_name: User name to replace in template
+            survey_link: Survey link to replace in template
+            embed_links: If True, embed CTA URLs directly into text instead of using buttons
+            add_callback_instructions: If True, add callback instructions for form completion
+        """
         message_text = ""
         for body_item in template_data.get("body", []):
             if body_item.get("type") == "text":
@@ -41,6 +51,24 @@ class TemplateService:
                 if survey_link:
                     text = text.replace("<survey_link>", survey_link)
                 message_text += text
+        
+        # If embed_links is True, append CTA links to the message text
+        if embed_links:
+            ctas = template_data.get("ctas", [])
+            for cta in ctas:
+                if cta.get("type") == "url":
+                    url = cta["url"]
+                    if survey_link and "<survey_link>" in url:
+                        url = url.replace("<survey_link>", survey_link)
+                    # Append link to message with proper formatting
+                    link_text = f"\n\n👉 {['name']}: {url}"
+                    message_text += link_text
+        
+        # Add callback instructions for form templates instead of buttons
+        if add_callback_instructions:
+            template_name = template_data.get("template_name", "").lower()
+            if any(keyword in template_name for keyword in ["form", "survey", "khảo sát"]):
+                message_text += '\n\nNếu bạn đã hoàn thành form, vui lòng nhắn "tôi đã điền form" để chúng tôi ghi nhận.'
         
         return message_text
 
@@ -79,14 +107,10 @@ class TemplateService:
     def get_welcome_message(self, user_name: str = "Bạn") -> Tuple[str, List[Dict[str, Any]]]:
         """Get welcome message from template_welcome_1"""
         template = self.load_template("template_welcome_1")
-        text = self.format_template_message(template, user_name)
+        text = self.format_template_message(template, user_name, embed_links=False, add_callback_instructions=False)
         
-        # Add start button for welcome message
-        buttons = [{
-            "text": "Bắt đầu",
-            "type": "callback",
-            "data": "welcome_start"
-        }]
+        # No buttons for Zalo - all interactions via text
+        buttons = []
         
         return text, buttons
 
@@ -94,8 +118,10 @@ class TemplateService:
                                  survey_link: str = None) -> Tuple[str, List[Dict[str, Any]]]:
         """Get customer care message from template_customercare_2"""
         template = self.load_template("template_customercare_2")
-        text = self.format_template_message(template, user_name, survey_link)
-        buttons = self.create_buttons_from_template(template, survey_link)
+        text = self.format_template_message(template, user_name, survey_link, embed_links=True, add_callback_instructions=True)
+        
+        # No buttons for Zalo - callback instructions are embedded in text
+        buttons = []
         
         return text, buttons
 
@@ -103,8 +129,10 @@ class TemplateService:
                             survey_link: str = None) -> Tuple[str, List[Dict[str, Any]]]:
         """Get reminder message from template_customercare_3"""
         template = self.load_template("template_customercare_3")
-        text = self.format_template_message(template, user_name, survey_link)
-        buttons = self.create_buttons_from_template(template, survey_link)
+        text = self.format_template_message(template, user_name, survey_link, embed_links=True, add_callback_instructions=True)
+        
+        # No buttons for Zalo - callback instructions are embedded in text
+        buttons = []
         
         return text, buttons
 

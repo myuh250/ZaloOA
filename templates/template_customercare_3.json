@@ -11,7 +11,7 @@
   "body": [
     {
       "type": "text",
-      "text": "Chào <user_name>, chúng tôi nhận thấy bạn chưa hoàn thành form khảo sát. Bạn vui lòng nhấn nút bên dưới để tiếp tục nhé."
+      "text": "Chào <user_name>, chúng tôi nhận thấy bạn chưa hoàn thành form khảo sát. Bạn vui lòng hoàn thành để chúng tôi có thể hỗ trợ tốt hơn."
     }
   ],
   "ctas": [

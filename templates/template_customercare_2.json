@@ -11,7 +11,7 @@
   "body": [
     {
       "type": "text",
-      "text": "Xin chào <user_name>, cảm ơn bạn đã tương tác. Vui lòng hoàn thành form khảo sát thông tin công ty tại link bên dưới:"
+      "text": "Xin chào <user_name>, cảm ơn bạn đã tương tác. Vui lòng hoàn thành form khảo sát thông tin công ty:"
     }
   ],
   "ctas": [
