@@ -82,15 +82,13 @@ class BotService:
         
         # Always handle form completion (this is response to bot)
         if self.is_form_completion_message(user_action.data):
-            # Mark form as completed in Google Sheets
-            self.form_service.mark_form_completed(user_action.user_id)
             callback_action = UserAction(
                 user_id=user_action.user_id,
                 user_name=user_action.user_name, 
                 action_type="callback",
                 data="form_filled"
             )
-            return self.handle_user_stage(callback_action)
+            return self.handle_callback(callback_action)
         
         # For first time users - always respond (no slash command needed)
         if self.form_service.is_first_time_user(user_action.user_id):
@@ -105,6 +103,25 @@ class BotService:
             text="",  # Empty response = no reply
             action_type="ignore"
         )
+        
+    def handle_callback(self, user_action: UserAction) -> BotResponse:
+        """Handle button callbacks"""
+        if user_action.data == "welcome_start":
+            self.form_service.increment_message_count(user_action.user_id)
+            text, kb = self.form_service.get_form_message(user_action.user_name)
+            return BotResponse(
+                text=text,
+                keyboard_markup=kb,
+                action_type="edit"
+            )
+        elif user_action.data == "form_filled":
+            self.form_service.mark_form_completed(user_action.user_id)
+            return BotResponse(
+                text=THANK_YOU,
+                action_type="edit"
+            )
+        
+        return BotResponse(text="Unknown action", action_type="message")
         
     def has_slash_command(self, text: str) -> bool:
         """Check if message contains slash command"""

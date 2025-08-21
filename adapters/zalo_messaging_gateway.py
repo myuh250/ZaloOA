@@ -49,13 +49,10 @@ class ZaloMessagingGateway(MessagingGateway):
             if response.status_code == 200:
                 return response.json()
             else:
-                print(f"API Error: Status {response.status_code}, Response: {response.text}")
                 return {"error": f"HTTP {response.status_code}"}
         except json.JSONDecodeError:
-            print(f"Invalid JSON response: {response.text}")
             return {"error": "Invalid JSON response"}
         except Exception as e:
-            print(f"Request failed: {str(e)}")
             return {"error": str(e)}
 
     async def send_response(self, response: BotResponse, user_id: str) -> None:
@@ -67,12 +64,6 @@ class ZaloMessagingGateway(MessagingGateway):
             user_id=user_id,
             message_text=response.text
         )
-        
-        # Log result for debugging
-        if result.get("error"):
-            print(f"Failed to send message: {result}")
-        else:
-            print(f"Message sent successfully: {result}")
 
     def parse_platform_data(self, raw_data: dict) -> dict:
         """Parse Zalo webhook data to standard format"""
