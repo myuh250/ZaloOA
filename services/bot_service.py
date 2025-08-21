@@ -79,8 +79,23 @@ class BotService:
 
     def handle_text_message(self, user_action: UserAction) -> BotResponse:
         """Handle text messages"""
+        if self.is_form_completion_message(user_action.data):
+            callback_action = UserAction(
+                user_id=user_action.user_id,
+                user_name=user_action.user_name, 
+                action_type="callback",
+                data="form_filled"
+            )
+            return self.handle_callback(callback_action)
+        
+        
+        return self.handle_user_stage(user_action)
+    
+    def handle_text_message(self, user_action: UserAction) -> BotResponse:
+        """Handle text messages with slash command requirement"""
+        
         # Always handle form completion (this is response to bot)
-        if self._is_form_completion_message(user_action.data):
+        if self.is_form_completion_message(user_action.data):
             callback_action = UserAction(
                 user_id=user_action.user_id,
                 user_name=user_action.user_name, 
@@ -94,7 +109,7 @@ class BotService:
             return self.handle_user_stage(user_action)
         
         # For existing users - only respond if slash command present
-        if self._has_slash_command(user_action.data):
+        if self.has_slash_command(user_action.data):
             return self.handle_user_stage(user_action)
         
         # No response - let human conversation continue
@@ -102,26 +117,7 @@ class BotService:
             text="",  # Empty response = no reply
             action_type="ignore"
         )
-    
-    def handle_callback(self, user_action: UserAction) -> BotResponse:
-        """Handle button callbacks"""
-        if user_action.data == "welcome_start":
-            self.form_service.increment_message_count(user_action.user_id)
-            text, kb = self.form_service.get_form_message(user_action.user_name)
-            return BotResponse(
-                text=text,
-                keyboard_markup=kb,
-                action_type="edit"
-            )
-        elif user_action.data == "form_filled":
-            self.form_service.mark_form_completed(user_action.user_id)
-            return BotResponse(
-                text=THANK_YOU,
-                action_type="edit"
-            )
         
-        return BotResponse(text="Unknown action", action_type="message")
-    
     def has_slash_command(self, text: str) -> bool:
         """Check if message contains slash command"""
         if not text:
