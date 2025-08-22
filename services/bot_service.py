@@ -56,7 +56,7 @@ class BotService:
         )
 
     def handle_provide_field(self, user_action: UserAction) -> BotResponse:
-        """Handle provide_field stage - collect name and email info"""
+        """Handle provide_field stage - collect email info"""
         
         # Get current user info
         current_info = self.form_service.get_user_info(user_action.user_id)
@@ -70,16 +70,14 @@ class BotService:
                 action_type="message"
             )
         
-        # User has sent a message, try to extract name and email
+        # User has sent a message, try to extract email
         llm_service = get_llm_service()
-        extracted = llm_service.extract_name_and_email(user_action.data)
+        extracted = llm_service.extract_email(user_action.data)
 
-        name_to_update = extracted.get('name') or current_info.get('name')
         email_to_update = extracted.get('email') or current_info.get('email')
-        if name_to_update or email_to_update:
+        if email_to_update:
             self.form_service.update_user_info(
                 user_action.user_id,
-                name=name_to_update,
                 email=email_to_update
             )
 
@@ -88,13 +86,14 @@ class BotService:
         
         updated_info = self.form_service.get_user_info(user_action.user_id)
         missing = []
-        if not updated_info.get('name'):
-            missing.append("tên")
         if not updated_info.get('email'):
             missing.append("email")
         
-        missing_text = " và ".join(missing)
-        response_text = f"Cảm ơn bạn! Tôi vẫn cần thêm thông tin về: {missing_text}. Vui lòng cung cấp đầy đủ thông tin để tiếp tục."
+        if missing:
+            missing_text = " và ".join(missing)
+            response_text = f"Cảm ơn bạn! Tôi vẫn cần thêm thông tin về: {missing_text}. Vui lòng cung cấp đầy đủ thông tin để tiếp tục."
+        else:
+            response_text = "Cảm ơn bạn! Thông tin đã được cập nhật."
         
         return BotResponse(
             text=response_text,

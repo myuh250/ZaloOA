@@ -78,7 +78,6 @@ class GoogleSheetsService:
             row_data = [
                 user_id,
                 username,
-                '',  # name (empty initially)
                 '',  # email (empty initially)
                 form_status,
                 '',  # form_submitted_at
@@ -88,7 +87,7 @@ class GoogleSheetsService:
             
             # Find the next empty row and append from column A
             next_row = len(self.worksheet.get_all_values()) + 1
-            range_name = f"A{next_row}:H{next_row}"  # From column A to H
+            range_name = f"A{next_row}:G{next_row}"  # From column A to G (removed one column)
             self.worksheet.update(range_name, [row_data])
             
             print(f"✅ Added user {user_id} ({username}) to row {next_row}")
@@ -106,18 +105,15 @@ class GoogleSheetsService:
                 row_num = i + 2  # +2 because of header and 1-based indexing
                 field_to_col = {
                     'username': 2,
-                    'name': 3,
-                    'email': 4,
-                    'form_status': 5,
-                    'form_submitted_at': 6,
-                    'last_follow_up_sent': 7,
-                    'created_at': 8
+                    'email': 3,
+                    'form_status': 4,
+                    'form_submitted_at': 5,
+                    'last_follow_up_sent': 6,
+                    'created_at': 7
                 }
                     
                 if 'username' in kwargs and 'username' in field_to_col:
                     self.worksheet.update_cell(row_num, field_to_col['username'], kwargs['username'])
-                if 'name' in kwargs and 'name' in field_to_col:
-                    self.worksheet.update_cell(row_num, field_to_col['name'], kwargs['name'])
                 if 'email' in kwargs and 'email' in field_to_col:   
                     self.worksheet.update_cell(row_num, field_to_col['email'], kwargs['email'])
                 if 'form_status' in kwargs and 'form_status' in field_to_col:
@@ -176,11 +172,9 @@ class GoogleSheetsService:
         now = datetime.now().isoformat()
         return self.update_user(user_id, last_follow_up_sent=now)
     
-    def update_user_info(self, user_id: str, name: str = None, email: str = None) -> bool:
-        """Update user's name and email information"""
+    def update_user_info(self, user_id: str, email: str = None) -> bool:
+        """Update user's email information"""
         updates = {}
-        if name is not None:
-            updates['name'] = name
         if email is not None:
             updates['email'] = email
         
@@ -189,15 +183,14 @@ class GoogleSheetsService:
         return True
     
     def has_complete_user_info(self, user_id: str) -> bool:
-        """Check if user has both name and email filled"""
+        """Check if user has email filled"""
         user = self.get_user(user_id)
         if not user:
             return False
         
-        name = user.get('name', '').strip()
         email = user.get('email', '').strip()
         
-        return bool(name) and bool(email)
+        return bool(email)
     
     def get_users_by_status(self, status: str) -> List[Dict]:
         """Get users by form status"""

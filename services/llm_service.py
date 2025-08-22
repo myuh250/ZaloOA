@@ -23,22 +23,21 @@ class LLMService:
         """Check if LLM is available"""
         return self.client is not None
     
-    def extract_name_and_email(self, text: str) -> Dict[str, Any]:
-        """Extract name and email from text using LLM"""
+    def extract_email(self, text: str) -> Dict[str, Any]:
+        """Extract email from text using LLM"""
         if not self._is_available():
-            return {"name": None, "email": None, "confidence": 0.0, "error": "LLM not configured"}
+            return {"email": None, "confidence": 0.0, "error": "LLM not configured"}
         
         prompt = f"""
-        From the following message, extract NAME and EMAIL:
+        From the following message, extract EMAIL:
         "{text}"
 
         Rules:
-        - Name: can be 1–4 words, must not contain numbers or special characters (except Vietnamese diacritics)
         - Email: must be in a valid format with @ and domain
         - If not found, return null
 
         Return in strict JSON format:
-        {{"name": "name or null", "email": "email or null"}}
+        {{"email": "email or null"}}
 
         Examples:
         - "nguyễn văn a test@gmail.com" → {{"name": "nguyễn văn a", "email": "test@gmail.com"}}
@@ -58,7 +57,6 @@ class LLMService:
         content = response.choices[0].message.content.strip()
             
         extracted = json.loads(content)
-        name = extracted.get("name", None)
         email = extracted.get("email", None)
                 
         if email and isinstance(email, str):
@@ -67,7 +65,6 @@ class LLMService:
                 email = None
 
         result = {
-            "name": name,
             "email": email
         }
             

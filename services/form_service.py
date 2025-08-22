@@ -41,7 +41,7 @@ class FormService:
         return user and user.get('form_status') == 'submitted'
     
     def has_provided_required_fields(self, user_id: str) -> bool:
-        """Check if user has provided required fields (name and email)"""
+        """Check if user has provided required fields (email)"""
         return self.sheets_service.has_complete_user_info(user_id)
 
     def get_user_message_count(self, user_id: str) -> int:
@@ -118,18 +118,17 @@ class FormService:
         user_name = user_name or self.default_user_name
         return self.template_service.get_customercare_1_message(user_name)
     
-    def update_user_info(self, user_id: str, name: str = None, email: str = None) -> bool:
-        """Update user's name and email information"""
-        return self.sheets_service.update_user_info(user_id, name, email)
+    def update_user_info(self, user_id: str, email: str = None) -> bool:
+        """Update user's email information"""
+        return self.sheets_service.update_user_info(user_id, email)
     
     def get_user_info(self, user_id: str) -> dict:
-        """Get user's current name and email information"""
+        """Get user's current email information"""
         user = self.get_user(user_id)
         if not user:
-            return {'name': '', 'email': ''}
+            return {'email': ''}
         
         return {
-            'name': user.get('name', '').strip(),
             'email': user.get('email', '').strip()
         }
 
