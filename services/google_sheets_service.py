@@ -73,19 +73,30 @@ class GoogleSheetsService:
     
     def add_user(self, user_id: str, username: str, form_status: str = 'pending') -> bool:
         """Add new user to sheet"""
-        now = datetime.now().isoformat()
-        row_data = [
-            user_id,
-            username,
-            '',  # name (empty initially)
-            '',  # email (empty initially)
-            form_status,
-            '',  # form_submitted_at
-            '',  # last_follow_up_sent
-            now  # created_at
-        ]
-        self.worksheet.append_row(row_data)
-        return True
+        try:
+            now = datetime.now().isoformat()
+            row_data = [
+                user_id,
+                username,
+                '',  # name (empty initially)
+                '',  # email (empty initially)
+                form_status,
+                '',  # form_submitted_at
+                '',  # last_follow_up_sent
+                now  # created_at
+            ]
+            
+            # Find the next empty row and append from column A
+            next_row = len(self.worksheet.get_all_values()) + 1
+            range_name = f"A{next_row}:H{next_row}"  # From column A to H
+            self.worksheet.update(range_name, [row_data])
+            
+            print(f"✅ Added user {user_id} ({username}) to row {next_row}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Error adding user {user_id}: {e}")
+            return False
     
     def update_user(self, user_id: str, **kwargs) -> bool:
         """Update user data in sheet"""
