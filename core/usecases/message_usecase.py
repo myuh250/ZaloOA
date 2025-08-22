@@ -2,6 +2,7 @@
 Message Processing Use Case - Application Layer
 Xử lý business logic độc lập với platform
 """
+import asyncio
 from dataclasses import dataclass
 from services.bot_service import BotService, UserAction, BotResponse
 from core.interfaces.messaging_gateway import MessagingGateway
@@ -56,6 +57,11 @@ class MessageUseCase:
                 response = self.bot_service.handle_callback(user_action)
             else:
                 response = self.bot_service.handle_start_command(user_action)
+            
+            # Add delay to give LLM time to process before potential follow-up messages
+            # Only delay if we have a response to send (not empty/ignore responses)
+            if response.action_type != "ignore" and response.text.strip():
+                await asyncio.sleep(2.5)  # Wait 2.5 seconds
             
             # Send through gateway (abstraction layer)
             await self.message_gateway.send_response(response, request.user_id)
