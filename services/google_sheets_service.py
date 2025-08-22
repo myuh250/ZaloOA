@@ -54,7 +54,9 @@ class GoogleSheetsService:
     def get_user(self, user_id: str) -> Optional[Dict]:
         """Get user data from sheet"""
         try:
-            records = self.worksheet.get_all_records()
+            # Use expected headers to avoid duplicate empty header issue
+            expected_headers = ['id', 'username', 'name', 'email', 'form_status', 'form_submitted_at', 'last_follow_up_sent', 'created_at']
+            records = self.worksheet.get_all_records(expected_headers=expected_headers)
             for record in records:
                 if str(record.get('id')) == str(user_id):
                     return record
@@ -66,7 +68,9 @@ class GoogleSheetsService:
     def get_all_users(self) -> List[Dict]:
         """Get all users from sheet"""
         try:
-            return self.worksheet.get_all_records()
+            # Use expected headers to avoid duplicate empty header issue
+            expected_headers = ['id', 'username', 'name', 'email', 'form_status', 'form_submitted_at', 'last_follow_up_sent', 'created_at']
+            return self.worksheet.get_all_records(expected_headers=expected_headers)
         except Exception as e:
             print(f"❌ Error getting all users: {e}")
             return []
@@ -89,7 +93,8 @@ class GoogleSheetsService:
     
     def update_user(self, user_id: str, **kwargs) -> bool:
         """Update user data in sheet"""
-        records = self.worksheet.get_all_records()
+        expected_headers = ['id', 'username', 'name', 'email', 'form_status', 'form_submitted_at', 'last_follow_up_sent', 'created_at']
+        records = self.worksheet.get_all_records(expected_headers=expected_headers)
         for i, record in enumerate(records):
             if str(record.get('id')) == str(user_id):
                 row_num = i + 2  # +2 because of header and 1-based indexing
@@ -107,12 +112,16 @@ class GoogleSheetsService:
                     self.worksheet.update_cell(row_num, 6, kwargs['form_submitted_at'])
                 if 'last_follow_up_sent' in kwargs:
                     self.worksheet.update_cell(row_num, 7, kwargs['last_follow_up_sent'])
+                if 'created_at' in kwargs:
+                    self.worksheet.update_cell(row_num, 8, kwargs['created_at'])
           
         return True
     
     def sync_form_responses(self, response_sheet_name="UserStatus"):
         response_ws = self.spreadsheet.worksheet(response_sheet_name)
-        responses = response_ws.get_all_records()
+        # Use expected headers for response sheet too
+        expected_headers = ['id', 'username', 'name', 'email', 'form_status', 'form_submitted_at', 'last_follow_up_sent', 'created_at']
+        responses = response_ws.get_all_records(expected_headers=expected_headers)
         
         all_users = self.get_all_users()
         
@@ -177,14 +186,62 @@ class GoogleSheetsService:
         
         return bool(name) and bool(email)
     
-    def get_all_users(self) -> List[Dict]:
-        """Get all users from sheet"""
-        return self.worksheet.get_all_records()
-    
     def get_users_by_status(self, status: str) -> List[Dict]:
         """Get users by form status"""
         all_users = self.get_all_users()
         return [user for user in all_users if user.get('form_status') == status]
+    
+    def debug_sheet_structure(self):
+        """Debug method to check sheet structure"""
+        try:
+            print("=== DEBUGGING SHEET STRUCTURE ===")
+            
+            # Get header row
+            header_values = self.worksheet.row_values(1)
+            print(f"📋 Headers: {header_values}")
+            
+            # Get first few rows
+            all_values = self.worksheet.get_all_values()
+            print(f"📊 Total rows: {len(all_values)}")
+            
+            if len(all_values) > 1:
+                print("📝 First data row:", all_values[1])
+            
+            # Get records with header mapping using expected headers
+            expected_headers = ['id', 'username', 'name', 'email', 'form_status', 'form_submitted_at', 'last_follow_up_sent', 'created_at']
+            records = self.worksheet.get_all_records(expected_headers=expected_headers)
+            if records:
+                print(f"🔍 First record keys: {list(records[0].keys())}")
+                print(f"🔍 First record: {records[0]}")
+                
+        except Exception as e:
+            print(f"❌ Debug failed: {e}")
+            
+        return {"headers": header_values if 'header_values' in locals() else []}
+    
+    def fix_headers_if_needed(self):
+        """Fix headers to match expected format"""
+        expected_headers = ['id', 'username', 'name', 'email', 'form_status', 'form_submitted_at', 'last_follow_up_sent', 'created_at']
+        
+        try:
+            current_headers = self.worksheet.row_values(1)
+            print(f"Current headers: {current_headers}")
+            print(f"Expected headers: {expected_headers}")
+            
+            if current_headers != expected_headers:
+                print("🔧 Updating headers...")
+                # Update header row
+                for i, header in enumerate(expected_headers, 1):
+                    self.worksheet.update_cell(1, i, header)
+                print("✅ Headers updated!")
+                return True
+            else:
+                print("✅ Headers already correct!")
+                return True
+                
+        except Exception as e:
+            print(f"❌ Failed to fix headers: {e}")
+            return False
 
 # Global instance
 sheets_service = None
