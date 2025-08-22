@@ -54,6 +54,15 @@ class BotService:
             action_type="message"
         )
 
+    def handle_provide_field(self, user_action: UserAction) -> BotResponse:
+        """Handle provide_field stage - collect name and email info"""
+        text, kb = self.form_service.get_provide_field_message(user_action.user_name)
+        return BotResponse(
+            text=text,
+            keyboard_markup=kb,
+            action_type="message"
+        )
+
     def handle_completed(self, user_action: UserAction) -> BotResponse:
         return BotResponse(
             text=THANK_YOU,
@@ -66,6 +75,8 @@ class BotService:
 
         if stage == 'first_time':
             return self.handle_first_time(user_action)
+        elif stage == 'provide_field':
+            return self.handle_provide_field(user_action)
         elif stage == 'second_interaction':
             return self.handle_second_interaction(user_action)
         elif stage == 'follow_up':

@@ -39,6 +39,12 @@ class FormService:
         """Check if user completed the form"""
         user = self.get_user(user_id)
         return user and user.get('form_status') == 'submitted'
+    
+    def has_provided_required_fields(self, user_id: str) -> bool:
+        """Check if user has provided required fields (name and email)"""
+        # TODO: Implement logic to check if user has provided name and email
+        # For now, return False to always show provide_field stage
+        return False
 
     def get_user_message_count(self, user_id: str) -> int:
         """
@@ -59,7 +65,8 @@ class FormService:
         """
         Determine what stage user is in:
         - 'first_time': Never seen before -> template_welcome_1
-        - 'second_interaction': Has 1 interaction, pending status -> template_customercare_2  
+        - 'provide_field': Just seen, need to collect name/email -> template_customercare_1
+        - 'second_interaction': Has name/email, 1st interaction -> template_customercare_2  
         - 'follow_up': Has 2+ interactions, pending status -> template_customercare_3
         - 'completed': Has completed form -> thank you message
         """
@@ -70,6 +77,11 @@ class FormService:
         user = self.get_user(user_id)
         if not user or user.get('form_status') != 'pending':
             return 'completed'
+        
+        # Check if user has provided required fields (name and email)
+        if not self.has_provided_required_fields(user_id):
+            return 'provide_field'
+        
         message_count = self.get_user_message_count(user_id)
         if message_count == 1:
             return 'second_interaction'
@@ -102,6 +114,11 @@ class FormService:
         """Get reminder message after user interaction using template"""
         user_name = user_name or self.default_user_name
         return self.template_service.get_reminder_message(user_name, settings.form_url)
+    
+    def get_provide_field_message(self, user_name: str = None) -> Tuple[str, Any]:
+        """Get message to collect user information using template_customercare_1"""
+        user_name = user_name or self.default_user_name
+        return self.template_service.get_customercare_1_message(user_name)
 
 # Global instance for backward compatibility
 _form_service = None

@@ -136,6 +136,16 @@ class TemplateService:
         
         return text, buttons
 
+    def get_customercare_1_message(self, user_name: str = "Bạn") -> Tuple[str, List[Dict[str, Any]]]:
+        """Get customer care info collection message from template_customercare_1"""
+        template = self.load_template("template_customercare_1")
+        text = self.format_template_message(template, user_name, embed_links=True, add_callback_instructions=False)
+        
+        # No buttons for Zalo - all interactions via text
+        buttons = []
+        
+        return text, buttons
+
 
 # Global instance for backward compatibility  
 _template_service = None

@@ -1,6 +1,6 @@
 {
-  "template_id": "CARE_SURVEY_001",
-  "template_name": "Khảo sát thông tin tổ chức",
+  "template_id": "CARE_SURVEY_000",
+  "template_name": "Khảo sát thông tin cá nhân",
   "type": "customer_care",
   "purpose": 5,
   "logo": {
@@ -11,7 +11,7 @@
   "body": [
     {
       "type": "text",
-      "text": "Cảm ơn bạn đã tương tác. Vui lòng hoàn thành form khảo sát thông tin công ty:"
+      "text": "Xin chào <user_name>, vui lòng cung cấp thông tin cá nhân để chúng tôi có thể hỗ trợ bạn tốt hơn, bao gồm: tên và email đã đăng ký tại bcp.global"
     }
   ],
   "ctas": [
