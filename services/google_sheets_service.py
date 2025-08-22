@@ -93,29 +93,54 @@ class GoogleSheetsService:
     
     def update_user(self, user_id: str, **kwargs) -> bool:
         """Update user data in sheet"""
-        expected_headers = ['id', 'username', 'name', 'email', 'form_status', 'form_submitted_at', 'last_follow_up_sent', 'created_at']
-        records = self.worksheet.get_all_records(expected_headers=expected_headers)
-        for i, record in enumerate(records):
-            if str(record.get('id')) == str(user_id):
-                row_num = i + 2  # +2 because of header and 1-based indexing
-                
-                # Update specific fields using update_cell for better reliability
-                if 'username' in kwargs:
-                    self.worksheet.update_cell(row_num, 2, kwargs['username'])
-                if 'name' in kwargs:
-                    self.worksheet.update_cell(row_num, 3, kwargs['name'])
-                if 'email' in kwargs:
-                    self.worksheet.update_cell(row_num, 4, kwargs['email'])
-                if 'form_status' in kwargs:
-                    self.worksheet.update_cell(row_num, 5, kwargs['form_status'])
-                if 'form_submitted_at' in kwargs:
-                    self.worksheet.update_cell(row_num, 6, kwargs['form_submitted_at'])
-                if 'last_follow_up_sent' in kwargs:
-                    self.worksheet.update_cell(row_num, 7, kwargs['last_follow_up_sent'])
-                if 'created_at' in kwargs:
-                    self.worksheet.update_cell(row_num, 8, kwargs['created_at'])
-          
-        return True
+        try:
+            # Get actual headers to find correct column positions
+            actual_headers = self.worksheet.row_values(1)
+            
+            # Create mapping of field to actual column number
+            field_to_col = {}
+            target_fields = ['id', 'username', 'name', 'email', 'form_status', 'form_submitted_at', 'last_follow_up_sent', 'created_at']
+            
+            for field in target_fields:
+                try:
+                    col_index = actual_headers.index(field) + 1  # +1 for 1-based indexing
+                    field_to_col[field] = col_index
+                except ValueError:
+                    print(f"⚠️  Field '{field}' not found in headers: {actual_headers}")
+            
+            # Find user row using expected headers for clean data
+            expected_headers = ['id', 'username', 'name', 'email', 'form_status', 'form_submitted_at', 'last_follow_up_sent', 'created_at']
+            records = self.worksheet.get_all_records(expected_headers=expected_headers)
+            
+            for i, record in enumerate(records):
+                if str(record.get('id')) == str(user_id):
+                    row_num = i + 2  # +2 because of header and 1-based indexing
+                    
+                    # Update fields using actual column positions
+                    if 'username' in kwargs and 'username' in field_to_col:
+                        self.worksheet.update_cell(row_num, field_to_col['username'], kwargs['username'])
+                    if 'name' in kwargs and 'name' in field_to_col:
+                        self.worksheet.update_cell(row_num, field_to_col['name'], kwargs['name'])
+                    if 'email' in kwargs and 'email' in field_to_col:
+                        self.worksheet.update_cell(row_num, field_to_col['email'], kwargs['email'])
+                    if 'form_status' in kwargs and 'form_status' in field_to_col:
+                        self.worksheet.update_cell(row_num, field_to_col['form_status'], kwargs['form_status'])
+                    if 'form_submitted_at' in kwargs and 'form_submitted_at' in field_to_col:
+                        self.worksheet.update_cell(row_num, field_to_col['form_submitted_at'], kwargs['form_submitted_at'])
+                    if 'last_follow_up_sent' in kwargs and 'last_follow_up_sent' in field_to_col:
+                        self.worksheet.update_cell(row_num, field_to_col['last_follow_up_sent'], kwargs['last_follow_up_sent'])
+                    if 'created_at' in kwargs and 'created_at' in field_to_col:
+                        self.worksheet.update_cell(row_num, field_to_col['created_at'], kwargs['created_at'])
+                    
+                    print(f"✅ Updated user {user_id} in row {row_num} using columns: {field_to_col}")
+                    return True
+            
+            print(f"❌ User {user_id} not found in records")
+            return False
+            
+        except Exception as e:
+            print(f"❌ Error updating user {user_id}: {e}")
+            return False
     
     def sync_form_responses(self, response_sheet_name="UserStatus"):
         response_ws = self.spreadsheet.worksheet(response_sheet_name)
