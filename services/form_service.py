@@ -42,9 +42,7 @@ class FormService:
     
     def has_provided_required_fields(self, user_id: str) -> bool:
         """Check if user has provided required fields (name and email)"""
-        # TODO: Implement logic to check if user has provided name and email
-        # For now, return False to always show provide_field stage
-        return False
+        return self.sheets_service.has_complete_user_info(user_id)
 
     def get_user_message_count(self, user_id: str) -> int:
         """
@@ -119,6 +117,21 @@ class FormService:
         """Get message to collect user information using template_customercare_1"""
         user_name = user_name or self.default_user_name
         return self.template_service.get_customercare_1_message(user_name)
+    
+    def update_user_info(self, user_id: str, name: str = None, email: str = None) -> bool:
+        """Update user's name and email information"""
+        return self.sheets_service.update_user_info(user_id, name, email)
+    
+    def get_user_info(self, user_id: str) -> dict:
+        """Get user's current name and email information"""
+        user = self.get_user(user_id)
+        if not user:
+            return {'name': '', 'email': ''}
+        
+        return {
+            'name': user.get('name', '').strip(),
+            'email': user.get('email', '').strip()
+        }
 
 # Global instance for backward compatibility
 _form_service = None

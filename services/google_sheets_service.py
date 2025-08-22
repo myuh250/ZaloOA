@@ -77,6 +77,8 @@ class GoogleSheetsService:
         row_data = [
             user_id,
             username,
+            '',  # name (empty initially)
+            '',  # email (empty initially)
             form_status,
             '',  # form_submitted_at
             '',  # last_follow_up_sent
@@ -95,12 +97,16 @@ class GoogleSheetsService:
                 # Update specific fields using update_cell for better reliability
                 if 'username' in kwargs:
                     self.worksheet.update_cell(row_num, 2, kwargs['username'])
+                if 'name' in kwargs:
+                    self.worksheet.update_cell(row_num, 3, kwargs['name'])
+                if 'email' in kwargs:
+                    self.worksheet.update_cell(row_num, 4, kwargs['email'])
                 if 'form_status' in kwargs:
-                    self.worksheet.update_cell(row_num, 3, kwargs['form_status'])
+                    self.worksheet.update_cell(row_num, 5, kwargs['form_status'])
                 if 'form_submitted_at' in kwargs:
-                    self.worksheet.update_cell(row_num, 4, kwargs['form_submitted_at'])
+                    self.worksheet.update_cell(row_num, 6, kwargs['form_submitted_at'])
                 if 'last_follow_up_sent' in kwargs:
-                    self.worksheet.update_cell(row_num, 5, kwargs['last_follow_up_sent'])
+                    self.worksheet.update_cell(row_num, 7, kwargs['last_follow_up_sent'])
           
         return True
     
@@ -147,6 +153,29 @@ class GoogleSheetsService:
         """Mark follow-up as sent"""
         now = datetime.now().isoformat()
         return self.update_user(user_id, last_follow_up_sent=now)
+    
+    def update_user_info(self, user_id: str, name: str = None, email: str = None) -> bool:
+        """Update user's name and email information"""
+        updates = {}
+        if name is not None:
+            updates['name'] = name
+        if email is not None:
+            updates['email'] = email
+        
+        if updates:
+            return self.update_user(user_id, **updates)
+        return True
+    
+    def has_complete_user_info(self, user_id: str) -> bool:
+        """Check if user has both name and email filled"""
+        user = self.get_user(user_id)
+        if not user:
+            return False
+        
+        name = user.get('name', '').strip()
+        email = user.get('email', '').strip()
+        
+        return bool(name) and bool(email)
     
     def get_all_users(self) -> List[Dict]:
         """Get all users from sheet"""
