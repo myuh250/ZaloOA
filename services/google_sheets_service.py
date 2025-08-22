@@ -134,27 +134,27 @@ class GoogleSheetsService:
         
         all_users = self.get_all_users()
         
-        username_to_userid = {}
+        email_to_userid = {}
         for user in all_users:
-            username = user.get("username")
-            if username:
-                username_to_userid[username] = user.get("id")
+            email = user.get("email", "").strip().lower()  
+            if email:
+                email_to_userid[email] = user.get("id")
         
         updated_users = []
         for response in responses:
-            username = response.get("username")
-            if not username:
+            email = response.get("email", "").strip().lower()  
+            if not email:
                 continue
                 
-            if username in username_to_userid:
-                user_id = username_to_userid[username]
+            if email in email_to_userid:
+                user_id = email_to_userid[email]
                 user_data = self.get_user(user_id)
                 if user_data and user_data.get("form_status") != "submitted":
                     success = self.mark_form_submitted(user_id)
                     
                     if success:
+                        username = user_data.get("username", "Unknown")
                         updated_users.append(username)
-                        print(f"Updated {username} to submitted")
                         
         return updated_users
     
