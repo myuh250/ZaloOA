@@ -3,6 +3,7 @@ from pydantic import field_validator
 from typing import Optional
 import os
 from pathlib import Path
+from openai import OpenAI
 
 class Settings(BaseSettings):
     """Application settings with validation"""
@@ -28,6 +29,13 @@ class Settings(BaseSettings):
     aws_region: str = "ap-southeast-1"
     aws_default_region: str = "ap-southeast-1"  
     cloudwatch_log_group: str = "MyFastAPIAppLogs"
+    
+    # OpenAI Configuration
+    openai_api_key: Optional[str] = None
+    openai_model: str = "gpt-4.1-nano"
+    openai_temperature: float = 0.1
+    openai_max_tokens: int = 150
+    openai_timeout: int = 30
     
     # Server Configuration
     host: str = "0.0.0.0"

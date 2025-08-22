@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional, Tuple, Dict, Any
 from services.form_service import FormService, get_form_service
+from services.llm_service import get_llm_service
 
 # Constants
 THANK_YOU = "Cảm ơn bạn đã hoàn thành form! 🙏"
@@ -56,10 +57,47 @@ class BotService:
 
     def handle_provide_field(self, user_action: UserAction) -> BotResponse:
         """Handle provide_field stage - collect name and email info"""
-        text, kb = self.form_service.get_provide_field_message(user_action.user_name)
+        
+        # Get current user info
+        current_info = self.form_service.get_user_info(user_action.user_id)
+        
+        # If this is the first time in provide_field stage (no message data yet)
+        if not user_action.data or not user_action.data.strip():
+            text, kb = self.form_service.get_provide_field_message(user_action.user_name)
+            return BotResponse(
+                text=text,
+                keyboard_markup=kb,
+                action_type="message"
+            )
+        
+        # User has sent a message, try to extract name and email
+        llm_service = get_llm_service()
+        extracted = llm_service.extract_name_and_email(user_action.data)
+
+        name_to_update = extracted.get('name') or current_info.get('name')
+        email_to_update = extracted.get('email') or current_info.get('email')
+        if name_to_update or email_to_update:
+            self.form_service.update_user_info(
+                user_action.user_id,
+                name=name_to_update,
+                email=email_to_update
+            )
+
+        if self.form_service.has_provided_required_fields(user_action.user_id):
+            return self.handle_second_interaction(user_action)
+        
+        updated_info = self.form_service.get_user_info(user_action.user_id)
+        missing = []
+        if not updated_info.get('name'):
+            missing.append("tên")
+        if not updated_info.get('email'):
+            missing.append("email")
+        
+        missing_text = " và ".join(missing)
+        response_text = f"Cảm ơn bạn! Tôi vẫn cần thêm thông tin về: {missing_text}. Vui lòng cung cấp đầy đủ thông tin để tiếp tục."
+        
         return BotResponse(
-            text=text,
-            keyboard_markup=kb,
+            text=response_text,
             action_type="message"
         )
 
@@ -105,7 +143,12 @@ class BotService:
         if self.form_service.is_first_time_user(user_action.user_id):
             return self.handle_user_stage(user_action)
         
-        # For existing users - only respond if slash command present
+        # For provide_field stage - always respond (need to collect name/email)
+        user_stage = self.form_service.get_user_stage(user_action.user_id)
+        if user_stage == 'provide_field':
+            return self.handle_user_stage(user_action)
+        
+        # For other existing users - only respond if slash command present
         if self.has_slash_command(user_action.data):
             return self.handle_user_stage(user_action)
         
