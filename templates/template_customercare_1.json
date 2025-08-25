@@ -11,7 +11,7 @@
   "body": [
     {
       "type": "text",
-      "text": "Xin chào <user_name>, vui lòng cung cấp thông tin cá nhân để chúng tôi có thể hỗ trợ bạn tốt hơn, bao gồm: tên và email đã đăng ký tại bcp.global"
+      "text": "Xin chào <user_name>, vui lòng cung cấp thông tin cá nhân để chúng tôi có thể hỗ trợ bạn tốt hơn, bao gồm: email đã đăng ký tại bcp.global"
     }
   ],
   "ctas": [

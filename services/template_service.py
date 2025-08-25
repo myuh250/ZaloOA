@@ -68,7 +68,7 @@ class TemplateService:
         if add_callback_instructions:
             template_name = template_data.get("template_name", "").lower()
             if any(keyword in template_name for keyword in ["form", "survey", "khảo sát"]):
-                message_text += '\n\nNếu bạn đã hoàn thành form, vui lòng nhắn "tôi đã điền form" để chúng tôi ghi nhận.'
+                message_text += '\n\nNếu bạn đã hoàn thành form mà chưa được thông báo, vui lòng nhắn "tôi đã điền form" để chúng tôi ghi nhận.'
         
         return message_text
 
