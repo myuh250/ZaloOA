@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request, Depends
 from fastapi.responses import FileResponse
 from core.usecases.message_usecase import MessageUseCase, ProcessMessageRequest
 from core.deps import MessageUseCaseDep
+from workers.follow_up_cron import run_sync_form_responses
 import os
 import logging
 
@@ -69,3 +70,33 @@ async def zalo_webhook(
     else:
         # logger.error(f"Processing failed: {result.message}")
         return {"status": "error", "message": result.message}
+
+@router.post("/form-submitted")
+async def form_submitted_webhook(request: Request):
+    """
+    Google Apps Script webhook - đơn giản xử lý khi có form response mới
+    Chỉ cần có email thì chạy sync
+    """
+    try:
+        # Parse request data từ Apps Script
+        data = await request.json()
+        email = data.get("email", "").strip().lower()
+        
+        # Chỉ cần có email thì chạy sync
+        if email:
+            logger.info(f"Form webhook received - Email: {email}")
+            
+            updated_users = await run_sync_form_responses()
+            
+            logger.info(f"Webhook sync completed - Updated {len(updated_users)} users")
+            
+            return {
+                "status": "success", 
+                "processed": len(updated_users)
+            }
+        else:
+            return {"status": "ignored", "message": "No email provided"}
+            
+    except Exception as e:
+        logger.error(f"Form webhook error: {e}")
+        return {"status": "error", "message": str(e)}
