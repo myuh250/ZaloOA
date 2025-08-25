@@ -100,3 +100,59 @@ async def form_submitted_webhook(request: Request):
     except Exception as e:
         logger.error(f"Form webhook error: {e}")
         return {"status": "error", "message": str(e)}
+
+@router.post("/status-changed")
+async def status_change_webhook(request: Request):
+    """
+    Apps Script webhook - nhận thông báo khi status thay đổi từ pending → submitted
+    Gửi tin nhắn cảm ơn trực tiếp qua Zalo OA
+    """
+    try:
+        # Parse data từ Apps Script
+        data = await request.json()
+        user_id = data.get("id")  # ID của user từ sheet
+        username = data.get("username", "Bạn")
+        email = data.get("email", "")
+        old_status = data.get("old_status", "")
+        new_status = data.get("new_status", "")
+        
+        logger.info(f"Status change webhook - User: {username} (ID: {user_id}), Email: {email}, Status: {old_status} → {new_status}")
+        
+        # Chỉ xử lý khi status chuyển từ pending/other → submitted
+        if new_status == "submitted" and old_status != "submitted":
+            # Import services cần thiết
+            from services.bot_service import BotService, UserAction
+            from services.form_service import get_form_service
+            from adapters.zalo_messaging_gateway import ZaloMessagingGateway
+            
+            # Khởi tạo services
+            form_service = get_form_service()
+            bot_service = BotService(form_service)
+            zalo_gateway = ZaloMessagingGateway()
+            
+            # Tạo response message
+            response = bot_service.handle_completed(UserAction(
+                user_id=str(user_id),
+                user_name=username,
+                action_type="completed"
+            ))
+            
+            # Gửi tin nhắn cảm ơn qua Zalo
+            await zalo_gateway.send_response(response, str(user_id))
+            
+            logger.info(f"Thank you message sent to {username} (ID: {user_id}): {response.text}")
+            
+            return {
+                "status": "success",
+                "message": f"Thank you message sent to {username}",
+                "user_id": user_id
+            }
+        else:
+            return {
+                "status": "ignored", 
+                "message": f"Status change ignored: {old_status} → {new_status}"
+            }
+            
+    except Exception as e:
+        logger.error(f"Status change webhook error: {e}")
+        return {"status": "error", "message": str(e)}
