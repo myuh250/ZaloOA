@@ -5,16 +5,19 @@ from workers.follow_up_cron import run_follow_up_cron
 logger = logging.getLogger(__name__)
 
 async def cron_worker():
-    """Run cron jobs periodically - FOR DEVELOPMENT ONLY
+    """Run backup cron jobs daily - FALLBACK MECHANISM ONLY
+    
+    Chạy 1 lần/ngày để backup sync, vì chính chủ yếu dựa vào Apps Script webhook
+    để realtime sync khi có form response mới.
     """
-    logger.warning("Running cron worker in development mode")
+    logger.warning("Running backup cron worker - fallback mechanism")
     
     while True:
         try:
             await run_follow_up_cron()
-            logger.info("Cron job completed")
+            logger.info("Backup cron job completed")
         except Exception as e:
-            logger.error(f"Error in cron job: {e}")
+            logger.error(f"Error in backup cron job: {e}")
         
-        # Sleep for 1 hour instead of 60 seconds
-        await asyncio.sleep(3600)  # 1 hour
+        # Sleep for 24 hours - backup sync only
+        await asyncio.sleep(86400)  # 24 hours
