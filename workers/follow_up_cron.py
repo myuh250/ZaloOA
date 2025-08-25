@@ -4,14 +4,12 @@ from services.bot_service import BotService
 from services.bot_service import UserAction
 from utils.date_convert import *
 from datetime import datetime
-from telegram import Bot
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-FOLLOW_UP_THRESHOLD = 900
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+FOLLOW_UP_THRESHOLD = 3600
 
 # Initialize services
 form_service = get_form_service()
@@ -21,7 +19,6 @@ async def run_sync_form_responses():
     updated_users = get_sheets_service().sync_form_responses("UserStatus")
     print("Auto synced users:", updated_users)
     all_users = get_sheets_service().get_all_users()
-    bot = Bot(token=BOT_TOKEN)
     for username in updated_users:
         user = next((u for u in all_users if u.get("username") == username), None)
         if user:
@@ -31,11 +28,8 @@ async def run_sync_form_responses():
                 user_name=username,
                 action_type="completed"
             ))
-            await bot.send_message(
-                chat_id=user_id,
-                text=response.text,
-                reply_markup=getattr(response, "keyboard_markup", None)
-            )
+            # Note: Response generated but not sent (Telegram functionality removed)
+            print(f"Completion response generated for {username} (ID: {user_id}): {response.text}")
     
 async def send_follow_up(user_id, user_name):
     user_action = UserAction(
@@ -44,21 +38,8 @@ async def send_follow_up(user_id, user_name):
         action_type="follow_up"
     )
     response = bot_service.handle_follow_up(user_action)
-    try:
-        bot = Bot(token=BOT_TOKEN)
-        await bot.send_message(
-            chat_id=user_id,
-            text=response.text,
-            reply_markup=response.keyboard_markup 
-        )
-        print(f"Follow-up sent to {user_name} (ID: {user_id})")
-    except telegram.error.BadRequest as e:
-        if "Chat not found" in str(e):
-            print(f"User {user_name} (ID: {user_id}) not found - may have blocked bot or deleted account")
-        else:
-            print(f"BadRequest error for {user_name} (ID: {user_id}): {e}")
-    except Exception as e:
-        print(f"Unexpected error sending to {user_name} (ID: {user_id}): {e}")
+    # Note: Response generated but not sent (Telegram functionality removed)
+    print(f"Follow-up response generated for {user_name} (ID: {user_id}): {response.text}")
             
 async def run_follow_up_cron():
     sheets = get_sheets_service()
@@ -83,6 +64,6 @@ async def run_follow_up_cron():
             continue
         elif seconds > FOLLOW_UP_THRESHOLD:
             await send_follow_up(user_id, user_name)
-            print(f"Sent follow-up to {user_name} (ID: {user_id})")
+            print(f"Generated follow-up for {user_name} (ID: {user_id})")
         else:
             print(f"Waiting, only {seconds}s passed (need {FOLLOW_UP_THRESHOLD}s)")
