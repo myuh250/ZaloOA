@@ -7,7 +7,6 @@ from datetime import datetime
 from telegram import Bot
 import os
 from dotenv import load_dotenv
-import telegram
 
 load_dotenv()
 
@@ -62,7 +61,6 @@ async def send_follow_up(user_id, user_name):
         print(f"Unexpected error sending to {user_name} (ID: {user_id}): {e}")
             
 async def run_follow_up_cron():
-    await run_sync_form_responses()
     sheets = get_sheets_service()
     all_users = sheets.get_all_users()
     for user in all_users:
