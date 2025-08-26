@@ -142,9 +142,21 @@ class BotService:
         if self.form_service.is_first_time_user(user_action.user_id):
             return self.handle_user_stage(user_action)
         
-        # For provide_field stage - always respond (need to collect name/email)
+        # Check if user has completed form (submitted status)
+        if self.form_service.has_completed_form(user_action.user_id):
+            # For completed users - ONLY respond if slash command present
+            if self.has_slash_command(user_action.data):
+                return self.handle_user_stage(user_action)
+            # No response - let human conversation continue
+            return BotResponse(
+                text="",  # Empty response = no reply
+                action_type="ignore"
+            )
+        
+        # For users still in form completion process (pending status)
         user_stage = self.form_service.get_user_stage(user_action.user_id)
         if user_stage == 'provide_field':
+            # Still need to collect email - always respond
             return self.handle_user_stage(user_action)
         
         # For other existing users - only respond if slash command present
