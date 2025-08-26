@@ -1,6 +1,7 @@
 import asyncio
 import urllib.request
 import logging
+from datetime import datetime, timezone, timedelta
 from workers.follow_up_cron import run_follow_up_cron
 from services.token_management_service import get_token_management_service
 
@@ -41,39 +42,75 @@ async def keep_alive_worker():
         # Sleep for 15 minutes
         await asyncio.sleep(900)
 
+def get_seconds_until_midnight_vn():
+    """Calculate seconds until next 12:00 AM Vietnam time (UTC+7)"""
+    vn_tz = timezone(timedelta(hours=7))
+    now = datetime.now(vn_tz)
+    
+    # Get next midnight (12:00 AM)
+    next_midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Calculate seconds until next midnight
+    seconds_until = (next_midnight - now).total_seconds()
+    
+    return int(seconds_until), next_midnight
+
 async def daily_worker():
-    """Daily tasks - backup sync + token refresh"""
+    """Daily tasks - backup sync + token refresh at 12:00 AM Vietnam time"""
     logger.info("🔄 Daily worker started")
     
     while True:
         try:
-            logger.info("⏰ Daily cron job running...")
+            # Calculate time until next midnight VN
+            seconds_until, next_midnight = get_seconds_until_midnight_vn()
+            hours = seconds_until // 3600
+            minutes = (seconds_until % 3600) // 60
             
-            # 1. Backup sync 
+            logger.info(f"⏰ Next cron job scheduled at {next_midnight.strftime('%Y-%m-%d %H:%M:%S')} VN time")
+            logger.info(f"😴 Sleeping for {hours}h {minutes}m until midnight...")
+            
+            # Sleep until midnight Vietnam time
+            await asyncio.sleep(seconds_until)
+            
+            logger.info("🌙 12:00 AM VN - Running daily cron jobs...")
+            
+            # 1. Follow-up messages (1 lần/ngày cho user chưa submit sau 24h)
             await run_follow_up_cron()
             logger.info("✅ Follow-up cron completed")
             
-            # 2. Auto refresh Zalo tokens
-            await _refresh_tokens_cron()
-            logger.info("✅ Token refresh completed")
+            # 2. Token refresh + Deploy (1 lần/ngày)
+            await _refresh_tokens_with_deploy()
+            logger.info("✅ Token refresh + deployment completed")
+            
+            logger.info("🎯 Daily cron jobs completed successfully")
             
         except Exception as e:
             logger.error(f"❌ Error in daily jobs: {e}")
-        
-        logger.info("😴 Daily worker sleeping for 24 hours...")
-        # Sleep for 24 hours
-        await asyncio.sleep(86400)
+            # If error occurs, wait 1 hour before retrying
+            logger.info("⚠️ Waiting 1 hour before retry...")
+            await asyncio.sleep(3600)
 
-async def _refresh_tokens_cron():
-    """Helper function to refresh Zalo tokens"""
+async def _refresh_tokens_with_deploy():
+    """Daily token refresh + deployment (1 lần/ngày lúc 12h đêm)"""
     try:
         token_service = get_token_management_service()
+        
+        # 1. Refresh tokens và update env vars
         result = await token_service.refresh_tokens_with_env_update()
         
-        if result["success"]:
-            logger.info("Automatic token refresh successful")
+        if not result["success"]:
+            logger.error(f"Token refresh failed: {result['message']}")
+            return
+            
+        logger.info("✅ Token refresh and env update successful")
+        
+        # 2. Trigger deployment để apply env vars mới (chỉ chạy 1 lần/ngày)
+        deploy_result = await token_service.trigger_render_deploy()
+        
+        if deploy_result["success"]:
+            logger.info("✅ Deployment triggered successfully")
         else:
-            logger.error(f"Automatic token refresh failed: {result['message']}")
+            logger.warning(f"⚠️ Deploy trigger failed: {deploy_result['message']}")
             
     except Exception as e:
-        logger.error(f"Token refresh cron error: {e}")
+        logger.error(f"Token refresh + deploy error: {e}")
