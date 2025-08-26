@@ -185,8 +185,8 @@ class BotService:
                 # Đã điền thật -> xác nhận hoàn thành
                 self.form_service.mark_form_completed(user_action.user_id)
                 return BotResponse(
-                    text=THANK_YOU,
-                    action_type="edit"
+                    text="",  # Empty response = no reply
+                    action_type="ignore"
                 )
             else:
                 # Chưa điền thật -> gửi lại message follow up
