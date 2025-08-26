@@ -180,11 +180,22 @@ class BotService:
                 action_type="edit"
             )
         elif user_action.data == "form_filled":
-            self.form_service.mark_form_completed(user_action.user_id)
-            return BotResponse(
-                text=THANK_YOU,
-                action_type="edit"
-            )
+            # Kiểm tra xem user đã thực sự điền form hay chưa
+            if self.form_service.has_completed_form(user_action.user_id):
+                # Đã điền thật -> xác nhận hoàn thành
+                self.form_service.mark_form_completed(user_action.user_id)
+                return BotResponse(
+                    text=THANK_YOU,
+                    action_type="edit"
+                )
+            else:
+                # Chưa điền thật -> gửi lại message follow up
+                current_stage_response = self.handle_user_stage(user_action)
+                return BotResponse(
+                    text=current_stage_response.text,
+                    keyboard_markup=current_stage_response.keyboard_markup,
+                    action_type="edit"
+                )
         
         return BotResponse(text="Unknown action", action_type="message")
         
