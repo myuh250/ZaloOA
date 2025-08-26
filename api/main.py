@@ -217,6 +217,35 @@ async def check_token_status():
         "has_render_config": bool(settings.render_service_id and settings.render_api_key)
     }
 
+@router.post("/trigger-deploy")
+async def trigger_deploy():
+    """
+    Manually trigger Render deployment
+    Useful after manual env var changes
+    """
+    try:
+        token_service = get_token_management_service()
+        result = await token_service.trigger_render_deploy()
+        
+        if result["success"]:
+            logger.info("Manual deploy trigger successful")
+            return {
+                "status": "success",
+                "message": result["message"],
+                "deploy_id": result.get("deploy_id"),
+                "deploy_status": result.get("status")
+            }
+        else:
+            logger.error(f"Manual deploy trigger failed: {result['message']}")
+            return {
+                "status": "error",
+                "message": result["message"]
+            }
+            
+    except Exception as e:
+        logger.error(f"Deploy trigger error: {e}")
+        return {"status": "error", "message": str(e)}
+
 # Function to be called by cron worker
 async def refresh_zalo_tokens_cron():
     """

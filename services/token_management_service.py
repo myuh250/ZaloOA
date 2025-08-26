@@ -172,12 +172,28 @@ class TokenManagementService:
                     "token_data": token_result  # Token refresh thành công nhưng update env failed
                 }
                 
-            logger.info("Token refresh and environment update completed successfully")
+            # 3. Trigger deploy để apply env vars mới
+            deploy_result = await self.trigger_render_deploy()
+            
+            if not deploy_result["success"]:
+                logger.warning(f"Deploy trigger failed: {deploy_result['message']}")
+                # Không fail toàn bộ process vì env đã update thành công
+                return {
+                    "success": True,
+                    "message": "Token refreshed and env updated, but deploy trigger failed",
+                    "token_expires_in": token_result.get("expires_in"),
+                    "updated_at": env_result.get("updated_at"),
+                    "deploy_warning": deploy_result["message"]
+                }
+                
+            logger.info("Token refresh, env update, and deployment trigger completed successfully")
             return {
                 "success": True,
-                "message": "Token refreshed and environment updated successfully",
+                "message": "Token refreshed, environment updated, and deployment triggered successfully",
                 "token_expires_in": token_result.get("expires_in"),
-                "updated_at": env_result.get("updated_at")
+                "updated_at": env_result.get("updated_at"),
+                "deploy_id": deploy_result.get("deploy_id"),
+                "deploy_status": deploy_result.get("status")
             }
             
         except Exception as e:
@@ -186,6 +202,57 @@ class TokenManagementService:
                 "success": False,
                 "message": f"Unexpected error: {str(e)}",
                 "step": "unknown"
+            }
+
+    async def trigger_render_deploy(self):
+        """
+        Trigger deployment trên Render để apply env vars mới
+        """
+        if not settings.render_service_id:
+            return {
+                "success": False,
+                "message": "Missing render_service_id configuration"
+            }
+        
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    f"https://api.render.com/v1/services/{settings.render_service_id}/deploys",
+                    headers={
+                        "accept": "application/json",
+                        "content-type": "application/json",
+                        "authorization": f"Bearer {settings.render_api_key}" if settings.render_api_key else ""
+                    },
+                    json={"clearCache": "do_not_clear"}
+                )
+                
+                if response.status_code not in [200, 201]:
+                    logger.error(f"Failed to trigger deploy: {response.status_code} - {response.text}")
+                    return {
+                        "success": False,
+                        "message": f"Failed to trigger deploy: {response.status_code}"
+                    }
+                
+                deploy_data = response.json()
+                logger.info("Successfully triggered Render deployment")
+                return {
+                    "success": True,
+                    "message": "Deployment triggered successfully",
+                    "deploy_id": deploy_data.get("id"),
+                    "status": deploy_data.get("status")
+                }
+                
+        except httpx.RequestError as e:
+            logger.error(f"Failed to trigger deploy: {e}")
+            return {
+                "success": False,
+                "message": f"Request failed: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error triggering deploy: {e}")
+            return {
+                "success": False,
+                "message": f"Unexpected error: {str(e)}"
             }
 
 # Global service instance - Dependency Injection pattern
