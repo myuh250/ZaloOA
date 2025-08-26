@@ -15,7 +15,7 @@ async def cron_worker():
     logger.info("Starting cron worker...")
     
     # Create tasks for concurrent execution
-    keep_alive_task = asyncio.create_task(keep_alive_worker())
+    # keep_alive_task = asyncio.create_task(keep_alive_worker())
     daily_task = asyncio.create_task(daily_worker())
     
     # Run both tasks concurrently
