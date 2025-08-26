@@ -11,17 +11,14 @@ from core.logging import setup_logging
 async def lifespan(app: FastAPI):
     """App lifespan - handle startup and shutdown"""
     
-    # Startup: Start cron worker as background task
-    cron_task = asyncio.create_task(cron_worker())
+    # NOTE: Cron workers removed to prevent event loop blocking on weak servers (512MB + 0.1 CPU)
+    # - Keep-alive ping was blocking webhook processing with sync urllib calls
+    # - External traffic (webhooks) naturally prevents Render from sleeping
+    # - Daily tasks can be handled by external schedulers if needed (Apps Script, GitHub Actions, etc.)
     
     yield  # App is running
     
-    # Shutdown: Cancel cron worker
-    cron_task.cancel()
-    try:
-        await cron_task
-    except asyncio.CancelledError:
-        pass
+    # No background tasks to cleanup
 
 
 def create_app() -> FastAPI:
