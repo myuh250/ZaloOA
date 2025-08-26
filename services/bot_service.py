@@ -70,7 +70,7 @@ class BotService:
                 action_type="message"
             )
         
-        # User has sent a message, try to extract email
+        # User has sent actual email input - proceed with extraction
         llm_service = get_llm_service()
         extracted = llm_service.extract_email(user_action.data)
 

@@ -7,9 +7,55 @@ from services.token_management_service import get_token_management_service
 from core.config import settings
 import os
 import logging
+import asyncio
+import time
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# Rate limiting to prevent spam (lightweight for weak servers)
+user_last_message = {}
+MIN_MESSAGE_INTERVAL = 5  # 5 seconds between messages per user
+last_cleanup = time.time()
+
+def cleanup_rate_limit_cache():
+    """Clean up old user timestamps"""
+    global last_cleanup, user_last_message
+    current_time = time.time()
+    
+    # Cleanup every 30 minutes
+    if current_time - last_cleanup > 1800:
+        # Remove users inactive for over 1 hour
+        cutoff_time = current_time - 3600
+        user_last_message = {
+            uid: timestamp for uid, timestamp in user_last_message.items()
+            if timestamp > cutoff_time
+        }
+        last_cleanup = current_time
+        logger.info(f"Rate limit cache cleaned up, {len(user_last_message)} active users remaining")
+
+def is_rate_limited(user_id: str) -> bool:
+    """Check if user is sending messages too quickly"""
+    cleanup_rate_limit_cache()
+    
+    current_time = time.time()
+    last_time = user_last_message.get(user_id, 0)
+    
+    if current_time - last_time < MIN_MESSAGE_INTERVAL:
+        logger.warning(f"Rate limited user {user_id}: {current_time - last_time:.1f}s since last message")
+        return True
+    
+    user_last_message[user_id] = current_time
+    return False
+
+async def process_message_background(message_usecase, process_request):
+    """Process message in background to keep webhook response fast"""
+    try:
+        result = await message_usecase.process_message(process_request)
+        if not result.success:
+            logger.error(f"Background processing failed: {result.message}")
+    except Exception as e:
+        logger.error(f"Background processing error: {e}")
 
 @router.get("/")
 async def health_check():
@@ -57,43 +103,48 @@ async def zalo_webhook(
     message_usecase: MessageUseCaseDep
 ):
     """
-    Zalo Webhook Controller - chỉ handle HTTP layer
-    Clean Architecture: Controller chỉ parse request và delegate to UseCase
+    Fast Response Zalo Webhook - Return 200 OK immediately to prevent retries
+    Process message in background to avoid timeout issues
     """
-    # 1. Parse HTTP request
-    # logger.info(f"Headers: {dict(request.headers)}")
-    data = await request.json()
-    logger.info(f"Webhook payload: {data}")
-    
-    # 1.1. Filter chỉ xử lý event từ user gửi tin nhắn
-    event_name = data.get("event_name", "")
-    if event_name != "user_send_text":
-        logger.info(f"Ignored event: {event_name}")
-        return {"status": "ignored", "message": f"Event {event_name} ignored"}
-    
-    # 2. Extract data từ request (HTTP concern)
-    user_id = str(data.get("sender", {}).get("id", ""))
-    user_name = data.get("user_name", "Bạn") 
-    message_text = data.get("message", {}).get("text", "")
-    
-    # 3. Create request DTO
-    process_request = ProcessMessageRequest(
-        user_id=user_id,
-        user_name=user_name,
-        message_text=message_text,
-        platform_data=data
-    )
-    
-    # 4. Delegate to UseCase (business logic)
-    result = await message_usecase.process_message(process_request)
-    
-    # 5. Return HTTP response
-    if result.success:
-        # logger.info(f"Message processed successfully: {result.response_text}")
-        return {"status": "received", "message": result.message}
-    else:
-        # logger.error(f"Processing failed: {result.message}")
-        return {"status": "error", "message": result.message}
+    try:
+        # 1. Parse HTTP request
+        data = await request.json()
+        logger.info(f"Webhook payload: {data}")
+        
+        # 2. Filter chỉ xử lý event từ user gửi tin nhắn
+        event_name = data.get("event_name", "")
+        if event_name != "user_send_text":
+            logger.info(f"Ignored event: {event_name}")
+            return {"status": "ignored", "message": f"Event {event_name} ignored"}
+        
+        # 3. Extract user data and check rate limiting
+        user_id = str(data.get("sender", {}).get("id", ""))
+        if is_rate_limited(user_id):
+            logger.info(f"Rate limited message from user {user_id}")
+            return {"status": "rate_limited", "message": "Please wait before sending another message"}
+        
+        # 4. Extract remaining data
+        user_name = data.get("user_name", "Bạn") 
+        message_text = data.get("message", {}).get("text", "")
+        
+        # 5. Create request DTO
+        process_request = ProcessMessageRequest(
+            user_id=user_id,
+            user_name=user_name,
+            message_text=message_text,
+            platform_data=data
+        )
+        
+        # 6. START BACKGROUND PROCESSING & RETURN IMMEDIATELY
+        # This prevents Zalo from timing out and retrying the webhook
+        asyncio.create_task(process_message_background(message_usecase, process_request))
+        
+        # 7. Fast response to prevent retries (< 100ms response time)
+        return {"status": "received", "message": "Processing message"}
+        
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        return {"status": "error", "message": "Failed to process webhook"}
 
 @router.post("/form-submitted")
 async def form_submitted_webhook(request: Request):
