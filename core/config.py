@@ -15,7 +15,9 @@ class Settings(BaseSettings):
     
     # Zalo Configuration
     zalo_oa_access_token: Optional[str] = None
-    zalo_oa_refresh_token: Optional[str] = None  
+    zalo_oa_refresh_token: Optional[str] = None
+    zalo_app_id: Optional[str] = None
+    zalo_secret_key: Optional[str] = None  
     
     # Google Sheets
     google_sheet_id: Optional[str] = None
@@ -48,6 +50,7 @@ class Settings(BaseSettings):
     
     # Render.com specific
     render_service_id: Optional[str] = None
+    render_api_key: Optional[str] = None
     
     @field_validator('bot_token')
     @classmethod

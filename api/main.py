@@ -3,11 +3,23 @@ from fastapi.responses import FileResponse
 from core.usecases.message_usecase import MessageUseCase, ProcessMessageRequest
 from core.deps import MessageUseCaseDep
 from workers.follow_up_cron import run_sync_form_responses
+from services.token_management_service import get_token_management_service
+from core.config import settings
 import os
 import logging
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+@router.get("/")
+async def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "ok",
+        "app_name": settings.app_name,
+        "version": settings.app_version,
+        "message": "Zalo OA Bot API is running"
+    }
 
 @router.get("/zalo_verifierUERWBlpADnKQr-8ntgHQC2EaYHVFqbvBDp4q.html")
 async def zalo_verification():
@@ -156,3 +168,65 @@ async def status_change_webhook(request: Request):
     except Exception as e:
         logger.error(f"Status change webhook error: {e}")
         return {"status": "error", "message": str(e)}
+
+@router.post("/refresh-zalo-token")
+async def refresh_zalo_token():
+    """
+    Manually refresh Zalo access token và update vào Render environment
+    API endpoint để test token refresh process
+    """
+    try:
+        token_service = get_token_management_service()
+        result = await token_service.refresh_tokens_with_env_update()
+        
+        if not result["success"]:
+            if result.get("step") == "update_environment":
+                # Partial success: token refreshed but env update failed
+                return {
+                    "status": "partial_success",
+                    "message": "Token refreshed but failed to update Render environment",
+                    "token_data": result.get("token_data"),
+                    "env_error": result["message"]
+                }
+            else:
+                return {"status": "error", "message": result["message"]}
+        
+        logger.info("Successfully refreshed token and updated Render environment")
+        return {
+            "status": "success",
+            "message": result["message"],
+            "token_expires_in": result.get("token_expires_in"),
+            "updated_at": result.get("updated_at")
+        }
+        
+    except Exception as e:
+        logger.error(f"Token refresh error: {e}")
+        return {"status": "error", "message": str(e)}
+
+@router.get("/token-status")
+async def check_token_status():
+    """
+    Check current Zalo token status - for monitoring/debugging
+    """
+    return {
+        "status": "info",
+        "has_access_token": bool(settings.zalo_oa_access_token),
+        "has_refresh_token": bool(settings.zalo_oa_refresh_token),
+        "has_app_id": bool(settings.zalo_app_id),
+        "has_secret_key": bool(settings.zalo_secret_key),
+        "has_render_config": bool(settings.render_service_id and settings.render_api_key)
+    }
+
+# Function to be called by cron worker
+async def refresh_zalo_tokens_cron():
+    """
+    Function được gọi bởi cron worker để tự động refresh tokens
+    """
+    try:
+        token_service = get_token_management_service()
+        result = await token_service.refresh_tokens_with_env_update()
+        return result["success"]
+        
+    except Exception as e:
+        logger.error(f"Cron token refresh error: {e}")
+        return False
