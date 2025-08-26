@@ -43,21 +43,24 @@ async def keep_alive_worker():
 
 async def daily_worker():
     """Daily tasks - backup sync + token refresh"""
-    logger.info("Starting daily worker")
+    logger.info("🔄 Daily worker started")
     
     while True:
         try:
+            logger.info("⏰ Daily cron job running...")
+            
             # 1. Backup sync 
             await run_follow_up_cron()
-            logger.info("Backup cron job completed")
+            logger.info("✅ Follow-up cron completed")
             
             # 2. Auto refresh Zalo tokens
             await _refresh_tokens_cron()
-            logger.info("Token refresh cron completed")
+            logger.info("✅ Token refresh completed")
             
         except Exception as e:
-            logger.error(f"Error in daily jobs: {e}")
+            logger.error(f"❌ Error in daily jobs: {e}")
         
+        logger.info("😴 Daily worker sleeping for 24 hours...")
         # Sleep for 24 hours
         await asyncio.sleep(86400)
 

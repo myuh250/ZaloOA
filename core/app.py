@@ -30,11 +30,12 @@ def create_app() -> FastAPI:
     # Setup logging first
     setup_logging()
     
-    # Create FastAPI app
+    # Create FastAPI app with lifespan
     app = FastAPI(
         title="Zalo OA Bot API",
         description="FastAPI application for Zalo Official Account Bot",
-        version="1.0.0"
+        version="1.0.0",
+        lifespan=lifespan
     )
     
     # Include routers
