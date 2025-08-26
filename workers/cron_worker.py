@@ -25,19 +25,32 @@ async def cron_worker():
         logger.error(f"Error in cron worker: {e}")
 
 async def keep_alive_worker():
-    """Keep-alive worker - ping /health every 15 minutes"""
+    """Keep-alive worker - ping /health every 15 minutes with retry logic"""
     health_url = "https://zalooa.onrender.com/health"
+    max_retries = 3
+    retry_delay = 30  # seconds between retries
     
     while True:
-        try:
-            # Simple HTTP GET using urllib (no extra dependencies)
-            with urllib.request.urlopen(health_url, timeout=30) as response:
-                if response.status == 200:
-                    logger.info("Keep-alive ping successful")
-                else:
-                    logger.warning(f"Keep-alive ping failed: {response.status}")
-        except Exception as e:
-            logger.error(f"Keep-alive error: {e}")
+        success = False
+        for attempt in range(max_retries):
+            try:
+                # Increased timeout to 90 seconds with retry logic
+                with urllib.request.urlopen(health_url, timeout=120) as response:
+                    if response.status == 200:
+                        logger.info(f"✅ Keep-alive ping successful (attempt {attempt + 1})")
+                        success = True
+                        break
+                    else:
+                        logger.warning(f"⚠️ Keep-alive ping failed: HTTP {response.status} (attempt {attempt + 1})")
+            except Exception as e:
+                logger.error(f"❌ Keep-alive error (attempt {attempt + 1}/{max_retries}): {e}")
+                
+                if attempt < max_retries - 1:
+                    logger.info(f"⏳ Retrying in {retry_delay} seconds...")
+                    await asyncio.sleep(retry_delay)
+        
+        if not success:
+            logger.critical(f"🚨 CRITICAL: Keep-alive failed after {max_retries} attempts. Service may sleep!")
         
         # Sleep for 15 minutes
         await asyncio.sleep(900)
