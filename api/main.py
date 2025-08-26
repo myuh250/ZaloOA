@@ -21,6 +21,18 @@ async def health_check():
         "message": "Zalo OA Bot API is running"
     }
 
+@router.get("/health")
+async def health_ping():
+    """
+    Simple health endpoint for keep-alive pings
+    Optimized for external monitoring services and cron jobs
+    """
+    return {
+        "status": "healthy",
+        "timestamp": "ok",
+        "uptime": "running"
+    }
+
 @router.get("/zalo_verifierUERWBlpADnKQr-8ntgHQC2EaYHVFqbvBDp4q.html")
 async def zalo_verification():
     """Serve Zalo verification file"""
