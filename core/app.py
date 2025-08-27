@@ -3,7 +3,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from workers.cron_worker import cron_worker
 from api.main import router as mainrouter
 from core.logging import setup_logging
 
