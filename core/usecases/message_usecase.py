@@ -4,6 +4,7 @@ Xử lý business logic độc lập với platform
 """
 import asyncio
 from dataclasses import dataclass
+from pydantic import BaseModel
 from services.bot_service import BotService, UserAction, BotResponse
 from core.interfaces.messaging_gateway import MessagingGateway
 
@@ -15,6 +16,22 @@ class ProcessMessageRequest:
     user_name: str
     message_text: str
     platform_data: dict
+
+
+class MessageRequestDTO(BaseModel):
+    user_id: str
+    user_name: str
+    message_text: str
+    raw_data: dict
+
+    @classmethod
+    def from_webhook(cls, data: dict):
+        return cls(
+            user_id=str(data.get("sender", {}).get("id", "")),
+            user_name=data.get("user_name", "Bạn"),
+            message_text=data.get("message", {}).get("text", ""),
+            raw_data=data,
+        )
 
 
 @dataclass

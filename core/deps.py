@@ -1,15 +1,3 @@
-"""
-FastAPI Dependencies - Dependency injection for services
-
-Usage in endpoints:
-    from fastapi import Depends
-    from core.deps import get_form_service
-    
-    @router.post("/webhook")
-    async def webhook(form_service: FormService = Depends(get_form_service)):
-        user = form_service.get_user(user_id)
-"""
-
 from functools import lru_cache
 from typing import Annotated
 
@@ -21,6 +9,9 @@ from services.template_service import TemplateService
 from services.google_sheets_service import GoogleSheetsService
 from core.config import settings
 from core.usecases.message_usecase import MessageUseCase
+from core.usecases.form_sync_usecase import FormSyncUseCase
+from core.usecases.status_change_usecase import StatusChangeUseCase
+from workers.background import BackgroundTaskManager
 from adapters.zalo_messaging_gateway import ZaloMessagingGateway
 import os
 
@@ -70,9 +61,27 @@ def get_message_usecase(
     return MessageUseCase(bot_service=bot_service, message_gateway=zalo_gateway)
 
 
+def get_form_sync_usecase() -> FormSyncUseCase:
+    return FormSyncUseCase()
+
+
+def get_status_change_usecase(
+    bot_service: BotService = Depends(get_bot_service),
+    zalo_gateway: ZaloMessagingGateway = Depends(get_zalo_gateway)
+) -> StatusChangeUseCase:
+    return StatusChangeUseCase(bot_service=bot_service, gateway=zalo_gateway)
+
+
+def get_background_manager() -> BackgroundTaskManager:
+    return BackgroundTaskManager()
+
+
+
 # Type annotations for easier usage
 GoogleSheetsServiceDep = Annotated[GoogleSheetsService, Depends(get_google_sheets_service)]
 TemplateServiceDep = Annotated[TemplateService, Depends(get_template_service)]
 FormServiceDep = Annotated[FormService, Depends(get_form_service)]
 BotServiceDep = Annotated[BotService, Depends(get_bot_service)]
 MessageUseCaseDep = Annotated[MessageUseCase, Depends(get_message_usecase)]
+FormSyncUseCaseDep = Annotated[FormSyncUseCase, Depends(get_form_sync_usecase)]
+StatusChangeUseCaseDep = Annotated[StatusChangeUseCase, Depends(get_status_change_usecase)]
